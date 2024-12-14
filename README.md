@@ -1,7 +1,7 @@
 # Introduction
 Hello! if you popped here, chances are, you want to create your own custom flags! If not, then wtf are you doing here, otherwise, carry on!
 
-This is a modified version of the custom flag framework by Red for creating custom flags in Ravenfield
+This is a modified version of the [custom flag framework](https://steamcommunity.com/sharedfiles/filedetails/?id=2797568530) by Red for creating custom flags in Ravenfield
 
 # Modifications from the Original
 - Performance loss is negligible (If there are still fps drops with this mutator enabled, let me know!)
