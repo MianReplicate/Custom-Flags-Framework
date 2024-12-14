@@ -89,7 +89,7 @@ MonoBehaviour:
   audioClips: []
   materials:
   - id: Flag1
-    value: {fileID: 0}
+    value: {fileID: 2100000, guid: 8ac4a2573e80d224ea894d204ed12684, type: 2}
   - id: Flag2
     value: {fileID: 2100000, guid: 148d493cd5907034d8bccb4bdb6b2f67, type: 2}
   animationCurves: []
@@ -113,8 +113,6 @@ MonoBehaviour:
   behaviour: 
   targets:
   - name: DontTouch
-    value: {fileID: 2100000, guid: fff3404f5b410bc43a597bd19b097b3e, type: 2}
-  - name: DontTouch2
     value: {fileID: 1364714365440955257}
 --- !u!114 &6994447811819451294
 MonoBehaviour:

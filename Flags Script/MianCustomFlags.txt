@@ -21,8 +21,7 @@ function MianCustomFlags:Start()
 	GameEvents.onCapturePointNeutralized.AddListener(self,"setPointMaterial")
 
     self.CustomFlags = self.dataContainer.GetMaterialArray("Flag")
-	self.ClearFlagMaterial = self.targets.DontTouch
-	self.isCloth = self.targets.DontTouch2
+	self.isCloth = self.targets.DontTouch
 	self.TeamToMaterials = {}
 
 	local blueMat = self.CustomFlags[self.script.mutator.GetConfigurationDropdown("EagleFlag") + 1]
