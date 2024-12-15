@@ -1,14 +1,4 @@
 -- Originally created by Red. Modified by MianReplicate
-
---[[
-Changes from original:
-- Performance loss is negligible (If there are still fps drops with this mutator enabled, let me know!)
-- Custom flags now show when capturing a flag
-- Added a default fallback for when a material isn't detected
-  - This allowed me to create the additional "DISABLED" flag option which lets players disable custom flags for a team
-  - This was an attempt to add mix and match compatibility with other custom flag mutators, this may or may not work
-]]
-
 behaviour("MianCustomFlags")
 
 function MianCustomFlags:Awake()
