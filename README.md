@@ -8,7 +8,7 @@ This is a modified version of the [custom flag framework](https://steamcommunity
 - Custom flags now show during capture
 - Added a default fallback for when a material isn't detected
   - This allowed me to create the additional "DISABLED" flag option which lets players disable custom flags for a team
-  - This was an attempt to add mix and match compatibility with other custom flag mutators but I find this to be difficult to implement without being too intrusive in the code
+  - This was an attempt to add mix and match compatibility with other custom flag mutators, this may or may not work
 
 # Tutorial
 Step 1. Download the package file and import it into your Unity project (Must have RFTools for obvious reasons)
