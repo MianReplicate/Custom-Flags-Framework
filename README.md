@@ -21,6 +21,8 @@ Step 4. Click the "Custom Flag Pack.prefab" within the "Assets/Custom Flags" fol
 
 Step 5. Click the "Custom Flag Export.prefab" and add a new element to the dropdowns for both "EagleFlag" and "RavenFlag" (Or only one if you'd prefer). These elements are connected respective to the order of the materials in the "Custom Flag Pack.prefab" file you just modified. As such, the names of the elements DO not matter, only their place in the list. E.g., the "DISABLED" option is the first element, as such it is connected to "Flag1"'s material.
 
+Step 6. You're done! Test out your mutator to see if it all works.
+
 # FAQ
 ### How to export?
 
