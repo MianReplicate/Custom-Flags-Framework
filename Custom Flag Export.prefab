@@ -44,14 +44,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mutators:
-  - name: Mutator Name
-    description: Mutator Notes
+  - name: Custom Flags Template
+    description: A template for custom flags
     menuImage: {fileID: 2800000, guid: 255c7f6fa6a9ddd4da9c4d37e19ab3ae, type: 3}
     mutatorPrefab: {fileID: 1450327976445928608, guid: c16e4e97f73067c4eb00a9a9a3913d66, type: 3}
     configuration:
       labels:
       - id: 
-        displayName: <b><color=white>Country Flags Configuration</color></b>
+        displayName: <b><color=white>If you are planning on using other flag mutators
+          using the same framework, select "DISABLED" on the flags you want to modify
+          with other mutators!</color></b>
         orderPriority: 0
       integers: []
       floats: []
@@ -63,13 +65,15 @@ MonoBehaviour:
         displayName: <color=blue>EAGLE FLAG</color>
         orderPriority: 2
         value:
-          index: 0
+          index: 1
           labels:
+          - DISABLED
           - <color=#3366ff>PROGRESS</color>
       - id: RavenFlag
         displayName: <color=red>RAVEN FLAG</color>
-        orderPriority: 3
+        orderPriority: 2
         value:
           index: 1
           labels:
+          - DISABLED
           - <color=#3366ff>PROGRESS</color>
