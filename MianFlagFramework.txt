@@ -1,0 +1,140 @@
+-- Originally created by Red. Modified by MianReplicate
+
+-- A flag framework that allows for flag mutators to be much more compatible with each other while maintaining performance, allowing for additional customization and removing redundant code
+
+behaviour("MianFlagFramework")
+
+function MianFlagFramework:Awake()
+	self.Flags = ActorManager.capturePoints
+	self.OverrideVanillaFlagColor = self.script.mutator.GetConfigurationBool("OverrideVanillaFlagColor")
+	self.TeamToName = {
+		[Team.Blue] = "Blue",
+		[Team.Red] = "Red", 
+		[Team.Neutral] = "Neutral"
+	}
+	local EColor = self.script.mutator.GetConfigurationString("EagleFlagColor")
+	local RColor = self.script.mutator.GetConfigurationString("RavenFlagColor")
+
+	self.TeamToColor = {
+		[Team.Blue] = {},
+		[Team.Red] = {}
+	}
+
+	for i in string.gmatch(EColor, '([^,]+)') do
+		local number = tonumber(i) or 255
+		table.insert(self.TeamToColor[Team.Blue], math.max(0, math.min(255, number)) / 255)
+	 end
+
+	 for i in string.gmatch(RColor, '([^,]+)') do
+		local number = tonumber(i) or 255
+		table.insert(self.TeamToColor[Team.Red], math.max(0, math.min(255, number)) / 255)
+	 end
+end
+
+function MianFlagFramework:AddFlagMaterial(team, material)
+	if(not team or not material) then
+		return
+	end
+
+	local matData = self.TeamToMaterialData[team]
+	if(matData and not matData.fallback) then
+		-- one of the flag mutators already added a material for this team :<
+		print("Team "..self.TeamToName[team].." already has a material for it. Cannot replace it with ",material,". Please make sure you are editing your flag mutators properly")
+		return
+	end
+	
+	print("Team "..self.TeamToName[team].."'s fallback material is being replaced with ",material)
+	local teamColor = self.TeamToColor[team]
+	material.color = Color(teamColor[1],teamColor[2],teamColor[3],1)
+
+	if(self.isCloth.activeSelf) then
+		material.SetTextureScale("_MainTex", Vector2(1, 1.4))
+	else
+		material.SetTextureScale("_MainTex", Vector2(1, 1))	
+	end
+
+	self.TeamToMaterialData[team] = {material=material, fallback=false}
+
+	for i, capturePoint in pairs(self.Flags) do
+		self:setPointMaterial(capturePoint)
+	end
+end
+
+function MianFlagFramework:Start()
+	GameEvents.onCapturePointCaptured.AddListener(self,"setPointMaterial")
+	GameEvents.onCapturePointNeutralized.AddListener(self,"setPointMaterial")
+
+	self.isCloth = self.targets.IsCloth
+
+	-- MaterialData = {material = Material, fallback = boolean}
+	self.TeamToMaterialData = {}
+
+	for i, capturePoint in pairs(self.Flags) do
+		self:updateFallbackForOwner(capturePoint)
+		self.script.AddValueMonitor("pendingOwner", "onPendingOwnerChanged", capturePoint)
+	end
+end
+
+function MianFlagFramework:setPointMaterial(capturePoint)
+	local ownerToUse = capturePoint.pendingOwner or capturePoint.owner
+	local matData = self.TeamToMaterialData[ownerToUse]
+
+	if(not matData) then 
+		return 
+	end
+
+	capturePoint.flagRenderer.material = matData.material
+	if(self:isOurMaterial(matData.material) or self.OverrideVanillaFlagColor) then
+		-- Have to be special here since Ravenfield just changes the color of their cloths for the teams
+		capturePoint.flagRenderer.material.color = matData.material.color
+	end
+	capturePoint.flagRenderer.material.SetTextureScale("_MainTex", capturePoint.flagRenderer.material.GetTextureScale("_MainTex"))
+end
+
+function MianFlagFramework:updateFallbackForOwner(capturePoint, replace)
+	if(self.TeamToMaterialData[capturePoint.defaultOwner] == nil or replace) then
+		print("Using fallback material:",capturePoint.flagRenderer.material,"for",capturePoint.defaultOwner)
+		self.TeamToMaterialData[capturePoint.defaultOwner] = {material=capturePoint.flagRenderer.material,fallback=true} -- FALLBACK MATERIAL
+		if(self.OverrideVanillaFlagColor and capturePoint.defaultOwner ~= Team.Neutral) then
+			local teamColor = self.TeamToColor[capturePoint.defaultOwner]
+			self.TeamToMaterialData[capturePoint.defaultOwner].material.color = Color(teamColor[1],teamColor[2],teamColor[3],1)
+		end
+		self:setPointMaterial(capturePoint)
+		-- if we do not have a material, we need to save the current cloth one for restoration purposes
+	end
+end
+
+function MianFlagFramework:pendingOwner()
+	return CurrentEvent.listenerData.pendingOwner
+end
+
+function MianFlagFramework:onPendingOwnerChanged()
+	self:setPointMaterial(CurrentEvent.listenerData)
+end
+
+function MianFlagFramework:pointColor()
+	return CurrentEvent.listenerData.flagRenderer.material.color
+end
+
+function MianFlagFramework:onPointColorChanged()
+	local capturePoint = CurrentEvent.listenerData
+	local foundMaterial = self:isOurMaterial(capturePoint.material)
+	if(capturePoint.flagRenderer.material.color ~= foundMaterial.flagRenderer.color) then
+		-- wtf, something changed the color of our material, let's fix that
+		print("Something unexpectedly changed the color of the flag material, fixing..")
+		self:setPointMaterial(capturePoint)
+	end
+end
+
+function MianFlagFramework:isSameMaterial(material, material2)
+	return material.mainTexture == material2.mainTexture
+end
+
+function MianFlagFramework:isOurMaterial(material)
+	for _, _material in pairs(self.TeamToMaterialData) do
+		if(_material.material == material) then
+			return _material.material;
+		end
+	end
+	return false;
+end

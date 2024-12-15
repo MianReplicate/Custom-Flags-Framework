@@ -1,0 +1,141 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1450327976445928608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5222062321539068418}
+  - component: {fileID: 6726400015927089120}
+  - component: {fileID: -2283702999148705195}
+  - component: {fileID: -3565725640322070915}
+  m_Layer: 0
+  m_Name: Flag Framework
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5222062321539068418
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 2259278910373322968}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6726400015927089120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec3b8824308adc64fb1901cef109132a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mutators:
+  - name: Mian's Custom Flags Framework
+    description: A framework that is used to replace vanilla flag designs with your
+      own! This must be ENABLED BEFORE other flag mutators in order to function properly.
+    menuImage: {fileID: 2800000, guid: 255c7f6fa6a9ddd4da9c4d37e19ab3ae, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608}
+    configuration:
+      labels:
+      - id: 
+        displayName: Customize the color of the flags below. This could be used just
+          to alter the vanilla flag color or to change the color of a flag material
+          from another mutator
+        orderPriority: 0
+      integers: []
+      floats: []
+      ranges: []
+      strings:
+      - id: EagleFlagColor
+        displayName: Eagle Flag Color
+        orderPriority: 0
+        value: 255,255,255
+      - id: RavenFlagColor
+        displayName: Raven Flag Color
+        orderPriority: 0
+        value: 255,255,255
+      bools:
+      - id: OverrideVanillaFlagColor
+        displayName: Override Vanilla Flag Colors
+        orderPriority: 0
+        value: 0
+      dropdowns: []
+--- !u!114 &-2283702999148705195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f8ca71ca01d2fb4098cb42abc5eceb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  source: {fileID: 4900000, guid: a157e08730b3aea40a99ab297fe3999c, type: 3}
+  behaviour: 
+  targets:
+  - name: IsCloth
+    value: {fileID: 1799220026407893892}
+--- !u!114 &-3565725640322070915
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55cfbfd7e0df0ec46a95ed62ec325017, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  option: 10
+  trueObject: {fileID: 1799220026407893892}
+  falseObject: {fileID: 0}
+--- !u!1 &1799220026407893892
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2259278910373322968}
+  m_Layer: 0
+  m_Name: IsCloth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2259278910373322968
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799220026407893892}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 5222062321539068418}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
