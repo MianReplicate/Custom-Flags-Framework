@@ -4,7 +4,7 @@ Hello! if you popped here, chances are, you want to create your own custom flags
 This is a heavily modified version of the [custom flag framework](https://steamcommunity.com/sharedfiles/filedetails/?id=2797568530) by Red for creating custom flags in Ravenfield. Heavy thanks to them for making the original :)
 
 # Modifications from the Original
-- This by itself does not come with any flags. Only the options to change flag colors for both vanilla & other flag mutators. You need to install this + a flag mutator which utilizes this framework.
+- This by itself does not come with any flags. Only the options to change flag colors for both vanilla & other flag mutators. You need to install this + a flag mutator which utilizes this framework. Some flag mutators are [Pride Flags](https://steamcommunity.com/sharedfiles/filedetails/?id=3385314817) or [Political Flags](https://steamcommunity.com/sharedfiles/filedetails/?id=3385314194).
 - Performance loss is negligible (If there are still fps drops with this mutator enabled, let me know!)
 - Custom flags now show during capture
 - Added a default fallback for when a flag material for a team isn't detected
@@ -18,7 +18,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 
 ### How to create my own flag mutators?
 
-Step 1. Download a unity.package file from one of my template. [Queer Flags](https://github.com/MianReplicate/Queer-Flags) or [Political Flags](https://github.com/MianReplicate/Political-Flags) will work. Then import it into your Unity project (Must have RFTools for obvious reasons)
+Step 1. Download a unity.package file from one of my template. [Pride Flags](https://github.com/MianReplicate/Pride-Flags) or [Political Flags](https://github.com/MianReplicate/Political-Flags) will work. Then import it into your Unity project (Must have RFTools for obvious reasons)
 
 Step 2. Get a 1024x512 image, and place it inside the Flag Textures folder. Delete any textures that are not needed.
 
