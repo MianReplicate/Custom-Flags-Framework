@@ -11,6 +11,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - Added a default fallback for when a flag material for a team isn't detected
   - This allowed me to create the additional "DISABLED" flag option which lets players disable custom flags for each team
 - If you want to mix & match flag mutators that use this framework, you can do that!
+- You can also randomize flag materials from all flag mutators when starting a new match. You could get the United States vs Russia in one match or France vs United Kingdoms in the other!
 
 # FAQ
 ### I found a bug using a flag mutator dependent on this framework
