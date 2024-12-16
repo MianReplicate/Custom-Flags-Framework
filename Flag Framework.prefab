@@ -84,6 +84,10 @@ MonoBehaviour:
         displayName: Randomize Flag Materials
         orderPriority: 5
         value: 0
+      - id: ChangeTeamNamesToFlagName
+        displayName: Change Team Names to Flag Names
+        orderPriority: 6
+        value: 0
       dropdowns: []
 --- !u!114 &-2283702999148705195
 MonoBehaviour:

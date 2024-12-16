@@ -8,6 +8,16 @@ function MianFlagFramework:Awake()
 	self.Flags = ActorManager.capturePoints
 	self.OverrideVanillaFlagColor = self.script.mutator.GetConfigurationBool("OverrideVanillaFlagColor")
 	self.RandomizeFlagMaterials = self.script.mutator.GetConfigurationBool("RandomizeFlagMaterials")
+	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
+	self.ChangeTeamColorsToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorsToFlagColor")
+
+	self.TeamToMaterialData = {}
+	self.MaterialData = {}
+	self.KnownAddedMaterials = {}
+	self.WaitTimer = 1
+	self.JustRandomized = true
+	self.IsCloth = self.targets.IsCloth
+
 	self.TeamToName = {
 		[Team.Blue] = "Blue",
 		[Team.Red] = "Red", 
@@ -60,7 +70,7 @@ function MianFlagFramework:UseFlagMaterialForTeam(team, material, replace)
 		error("Team "..self.TeamToName[team].." already has a material for it. Cannot replace it with "..material.name..". Please make sure you are editing your flag mutators properly")
 	end
 	
-	print("Team "..self.TeamToName[team].."'s material is being replaced with "..material.name)
+	print("Team "..self.TeamToName[team].."'s material is being set to "..material.name)
 	local teamColor = self.TeamToColor[team]
 	material.color = Color(teamColor[1],teamColor[2],teamColor[3],1)
 
@@ -72,6 +82,14 @@ function MianFlagFramework:UseFlagMaterialForTeam(team, material, replace)
 
 	self.TeamToMaterialData[team] = {material=material, fallback=false}
 
+	if(self.ChangeTeamNamesToFlagName and team ~= Team.Neutral) then
+		local name = string.upper(material.name)
+		local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)") 
+
+		GameManager.SetTeamName(team, name)
+		GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
+	end
+
 	for i, capturePoint in pairs(self.Flags) do
 		self:setPointMaterial(capturePoint)
 	end
@@ -81,14 +99,7 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointCaptured.AddListener(self,"setPointMaterial")
 	GameEvents.onCapturePointNeutralized.AddListener(self,"setPointMaterial")
 
-	self.IsCloth = self.targets.IsCloth
-
 	-- MaterialData = {material = Material, fallback = boolean}
-	self.TeamToMaterialData = {}
-	self.MaterialData = {}
-	self.KnownAddedMaterials = {}
-	self.WaitTimer = 1
-	self.JustRandomized = true
 
 	for i, capturePoint in pairs(self.Flags) do
 		self:updateFallbackForOwner(capturePoint)
