@@ -9,7 +9,6 @@ function MianFlagFramework:Awake()
 	self.OverrideVanillaFlagColor = self.script.mutator.GetConfigurationBool("OverrideVanillaFlagColor")
 	self.RandomizeFlagMaterials = self.script.mutator.GetConfigurationBool("RandomizeFlagMaterials")
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
-	self.ChangeTeamColorsToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorsToFlagColor")
 
 	self.TeamToMaterialData = {}
 	self.MaterialData = {}
