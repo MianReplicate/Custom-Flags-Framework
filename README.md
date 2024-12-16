@@ -12,11 +12,16 @@ This is a heavily modified version of the [custom flag framework](https://steamc
   - This allowed me to create the additional "DISABLED" flag option which lets players disable custom flags for each team
 - If you want to mix & match flag mutators that use this framework, you can do that!
 - You can also randomize flag materials from all flag mutators when starting a new match. You could get the United States vs Russia in one match or France vs United Kingdoms in the other!
+- There is an option to also automatically change the team name respective to its flag material's name. E.g. if you selected the United States flag for Eagles, then "Eagles" will be automatically renamed to "United States."
 
 # FAQ
 ### I found a bug using a flag mutator dependent on this framework
 
 - Report it [here](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/issues). There is a good chance this framework is bugging rather than the mutator itself.
+
+### Can I also change the team color to a flag material's color?
+
+- No and I do not plan to add this, you are better off using [Team Config](https://steamcommunity.com/sharedfiles/filedetails/?id=3349167045) for doing this manually. Team Config is much more configurable when it comes to modifying team names and colors. It is also more preferable to use this over the built-in configuration option I added for automatically changing the team name to the selected flag's name.
 
 ### How to create my own flag mutators?
 
@@ -24,7 +29,7 @@ Step 1. Download a unity.package file from one of my template. [Pride Flags](htt
 
 Step 2. Get a 1024x512 image, and place it inside the Flag Textures folder. Delete any textures that are not needed.
 
-Step 3. Create a new material in the Flag Materials folder. You can just copy one of the default ones in there and remove the others. Afterwards, sure to replace the material's texture with your new image.
+Step 3. Create a new material in the Flag Materials folder. You can just copy one of the default ones in there and remove the others. Afterwards, sure to replace the material's texture with your new image. Be sure to be consistent with material names since these are also used for team names.
 
 Step 4. Click the "Political Flags.prefab" and add a new material in the "Material" dropdown list within the "Data Container" section. Set the value to your material. Ensure the ids are named in order with "Flag" preceding the number.
 
