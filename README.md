@@ -5,11 +5,12 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 
 # Modifications from the Original
 - This by itself does not come with any flags. Only the options to change flag colors for both vanilla & other flag mutators. You need to install this + a flag mutator which utilizes this framework. Some flag mutators are [Pride Flags](https://steamcommunity.com/sharedfiles/filedetails/?id=3385314817) or [Political Flags](https://steamcommunity.com/sharedfiles/filedetails/?id=3385314194).
+  - When making your custom flag mutators using this framework, they will have to depend on this framework. This makes it easier to mass fix bugs across all flag mutators and allows for seamless compatibility 
 - Performance loss is negligible (If there are still fps drops with this mutator enabled, let me know!)
 - Custom flags now show during capture
 - Added a default fallback for when a flag material for a team isn't detected
   - This allowed me to create the additional "DISABLED" flag option which lets players disable custom flags for each team
-- Works amazingly with multiple flag mutators using this framework. If you want to mix & match, you can do that!
+- If you want to mix & match flag mutators that use this framework, you can do that!
 
 # FAQ
 ### I found a bug using a flag mutator dependent on this framework

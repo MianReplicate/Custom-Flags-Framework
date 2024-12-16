@@ -47,10 +47,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mutators:
-  - name: Mian's Custom Flags Framework
+  - name: Custom Flags Framework
     description: A framework that is used to replace vanilla flag designs with your
       own! This must be ENABLED BEFORE other flag mutators in order to function properly.
-    menuImage: {fileID: 2800000, guid: 255c7f6fa6a9ddd4da9c4d37e19ab3ae, type: 3}
+    menuImage: {fileID: 2800000, guid: 7cb9c005c41bfec4d800e95c5e2747ec, type: 3}
     mutatorPrefab: {fileID: 1450327976445928608}
     configuration:
       labels:
