@@ -88,6 +88,10 @@ MonoBehaviour:
         displayName: Change Team Names to Flag Names
         orderPriority: 6
         value: 0
+      - id: ChangeTeamColorToFlagColor
+        displayName: Change Team Color from Flag
+        orderPriority: 7
+        value: 0
       dropdowns: []
 --- !u!114 &-2283702999148705195
 MonoBehaviour:

@@ -9,6 +9,7 @@ function MianFlagFramework:Awake()
 	self.OverrideVanillaFlagColor = self.script.mutator.GetConfigurationBool("OverrideVanillaFlagColor")
 	self.RandomizeFlagMaterials = self.script.mutator.GetConfigurationBool("RandomizeFlagMaterials")
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
+	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
 
 	self.TeamToMaterialData = {}
 	self.MaterialData = {}
@@ -40,7 +41,7 @@ function MianFlagFramework:Awake()
 	end
 end
 
-function MianFlagFramework:AddFlagMaterial(material)
+function MianFlagFramework:AddFlagMaterial(material, teamColor)
 	if(self.KnownAddedMaterials[material.name]) then
 		error(material.name.." is an already added material!")
 		return
@@ -48,7 +49,7 @@ function MianFlagFramework:AddFlagMaterial(material)
 
 	print("Added new material: "..material.name)
 	table.insert(self.MaterialData, material)
-	self.KnownAddedMaterials[material.name] = material.name
+	self.KnownAddedMaterials[material.name] = {name=material.name,teamColor=teamColor}
 
 	self.WaitTimer = 1
 	self.JustRandomized = false
@@ -81,12 +82,22 @@ function MianFlagFramework:UseFlagMaterialForTeam(team, material, replace)
 
 	self.TeamToMaterialData[team] = {material=material, fallback=false}
 
-	if(self.ChangeTeamNamesToFlagName and team ~= Team.Neutral) then
-		local name = string.upper(material.name)
+	if(self:isOurMaterial(material) and team ~= Team.Neutral) then
 		local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)") 
+		if(self.ChangeTeamNamesToFlagName) then
+			local name = string.upper(material.name)
+	
+			GameManager.SetTeamName(team, name)
+			GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
+		end
 
-		GameManager.SetTeamName(team, name)
-		GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
+		if(self.ChangeTeamColorToFlagColor) then
+			local color = self.KnownAddedMaterials[material.name].teamColor
+			ColorScheme.SetTeamColor(team, color)
+			ColorScheme.SetTeamBloodColor(team, color)
+			color.a = 0.392
+			GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
+		end
 	end
 
 	for i, capturePoint in pairs(self.Flags) do
