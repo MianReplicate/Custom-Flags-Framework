@@ -7,6 +7,7 @@ behaviour("MianFlagFramework")
 function MianFlagFramework:Awake()
 	self.Flags = ActorManager.capturePoints
 	self.OverrideVanillaFlagColor = self.script.mutator.GetConfigurationBool("OverrideVanillaFlagColor")
+	self.RandomizeFlagMaterials = self.script.mutator.GetConfigurationBool("RandomizeFlagMaterials")
 	self.TeamToName = {
 		[Team.Blue] = "Blue",
 		[Team.Red] = "Red", 
@@ -30,22 +31,40 @@ function MianFlagFramework:Awake()
 	end
 end
 
-function MianFlagFramework:AddFlagMaterial(team, material)
+function MianFlagFramework:AddFlagMaterial(material)
+	if(self.KnownAddedMaterials[material.name]) then
+		error(material.name.." is an already added material!")
+		return
+	end
+
+	print("Added new material: "..material.name)
+	table.insert(self.MaterialData, material)
+	self.KnownAddedMaterials[material.name] = material.name
+
+	self.WaitTimer = 1
+	self.JustRandomized = false
+end
+
+function MianFlagFramework:UseFlagMaterialForTeam(team, material, replace)
 	if(not team or not material) then
 		return
 	end
 
+	if(not self.KnownAddedMaterials[material.name]) then
+		error(material.name.." is not a stored flag material! Please add it first and then use it")
+	end
+
 	local matData = self.TeamToMaterialData[team]
-	if(matData and not matData.fallback) then
+	if(matData and not matData.fallback and not replace) then
 		-- one of the flag mutators already added a material for this team :<
 		error("Team "..self.TeamToName[team].." already has a material for it. Cannot replace it with "..material.name..". Please make sure you are editing your flag mutators properly")
 	end
 	
-	print("Team "..self.TeamToName[team].."'s fallback material is being replaced with "..material.name)
+	print("Team "..self.TeamToName[team].."'s material is being replaced with "..material.name)
 	local teamColor = self.TeamToColor[team]
 	material.color = Color(teamColor[1],teamColor[2],teamColor[3],1)
 
-	if(self.isCloth.activeSelf) then
+	if(self.IsCloth.activeSelf) then
 		material.SetTextureScale("_MainTex", Vector2(1, 1.4))
 	else
 		material.SetTextureScale("_MainTex", Vector2(1, 1))	
@@ -62,14 +81,37 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointCaptured.AddListener(self,"setPointMaterial")
 	GameEvents.onCapturePointNeutralized.AddListener(self,"setPointMaterial")
 
-	self.isCloth = self.targets.IsCloth
+	self.IsCloth = self.targets.IsCloth
 
 	-- MaterialData = {material = Material, fallback = boolean}
 	self.TeamToMaterialData = {}
+	self.MaterialData = {}
+	self.KnownAddedMaterials = {}
+	self.WaitTimer = 1
+	self.JustRandomized = true
 
 	for i, capturePoint in pairs(self.Flags) do
 		self:updateFallbackForOwner(capturePoint)
 		self.script.AddValueMonitor("pendingOwner", "onPendingOwnerChanged", capturePoint)
+	end
+end
+
+function MianFlagFramework:Update()
+	if(not self.JustRandomized) then
+		self.WaitTimer = self.WaitTimer - Time.deltaTime
+		if(self.RandomizeFlagMaterials and self.WaitTimer <= 0) then
+			self.JustRandomized = true
+			print("All materials seem to have been added. Randomizing!")
+	
+			local blueMat = self.MaterialData[math.random(1, #self.MaterialData)]
+			local redMat
+			repeat
+				redMat = self.MaterialData[math.random(1, #self.MaterialData)]
+			until redMat.mainTexture ~= blueMat.mainTexture or #self.MaterialData <= 1
+	
+			self:UseFlagMaterialForTeam(Team.Blue, blueMat, true)
+			self:UseFlagMaterialForTeam(Team.Red, redMat, true)
+		end
 	end
 end
 
