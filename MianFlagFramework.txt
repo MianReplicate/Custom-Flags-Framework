@@ -12,23 +12,22 @@ function MianFlagFramework:Awake()
 		[Team.Red] = "Red", 
 		[Team.Neutral] = "Neutral"
 	}
-	local EColor = self.script.mutator.GetConfigurationString("EagleFlagColor")
-	local RColor = self.script.mutator.GetConfigurationString("RavenFlagColor")
-
 	self.TeamToColor = {
 		[Team.Blue] = {},
 		[Team.Red] = {}
 	}
+	self.TeamToDisplayName = {
+		[Team.Blue] = "Eagle",
+		[Team.Red] = "Raven"
+	}
 
-	for i in string.gmatch(EColor, '([^,]+)') do
-		local number = tonumber(i) or 255
-		table.insert(self.TeamToColor[Team.Blue], math.max(0, math.min(255, number)) / 255)
-	 end
-
-	 for i in string.gmatch(RColor, '([^,]+)') do
-		local number = tonumber(i) or 255
-		table.insert(self.TeamToColor[Team.Red], math.max(0, math.min(255, number)) / 255)
-	 end
+	for team, name in pairs(self.TeamToDisplayName) do
+		local color = self.script.mutator.GetConfigurationString(name.."FlagColor")
+		for value in string.gmatch(color, '([^,]+)') do
+			local number = tonumber(value) or 255
+			table.insert(self.TeamToColor[team], math.max(0, math.min(255, number)) / 255)
+		end
+	end
 end
 
 function MianFlagFramework:AddFlagMaterial(team, material)
@@ -39,11 +38,10 @@ function MianFlagFramework:AddFlagMaterial(team, material)
 	local matData = self.TeamToMaterialData[team]
 	if(matData and not matData.fallback) then
 		-- one of the flag mutators already added a material for this team :<
-		print("Team "..self.TeamToName[team].." already has a material for it. Cannot replace it with ",material,". Please make sure you are editing your flag mutators properly")
-		return
+		error("Team "..self.TeamToName[team].." already has a material for it. Cannot replace it with "..material.name..". Please make sure you are editing your flag mutators properly")
 	end
 	
-	print("Team "..self.TeamToName[team].."'s fallback material is being replaced with ",material)
+	print("Team "..self.TeamToName[team].."'s fallback material is being replaced with "..material.name)
 	local teamColor = self.TeamToColor[team]
 	material.color = Color(teamColor[1],teamColor[2],teamColor[3],1)
 
@@ -88,12 +86,12 @@ function MianFlagFramework:setPointMaterial(capturePoint)
 		-- Have to be special here since Ravenfield just changes the color of their cloths for the teams
 		capturePoint.flagRenderer.material.color = matData.material.color
 	end
-	capturePoint.flagRenderer.material.SetTextureScale("_MainTex", capturePoint.flagRenderer.material.GetTextureScale("_MainTex"))
+	capturePoint.flagRenderer.material.SetTextureScale("_MainTex", matData.material.GetTextureScale("_MainTex"))
 end
 
 function MianFlagFramework:updateFallbackForOwner(capturePoint, replace)
 	if(self.TeamToMaterialData[capturePoint.defaultOwner] == nil or replace) then
-		print("Using fallback material:",capturePoint.flagRenderer.material,"for",capturePoint.defaultOwner)
+		print("Using fallback material: "..capturePoint.flagRenderer.material.name.." for "..self.TeamToName[capturePoint.defaultOwner])
 		self.TeamToMaterialData[capturePoint.defaultOwner] = {material=capturePoint.flagRenderer.material,fallback=true} -- FALLBACK MATERIAL
 		if(self.OverrideVanillaFlagColor and capturePoint.defaultOwner ~= Team.Neutral) then
 			local teamColor = self.TeamToColor[capturePoint.defaultOwner]
@@ -121,7 +119,7 @@ function MianFlagFramework:onPointColorChanged()
 	local foundMaterial = self:isOurMaterial(capturePoint.material)
 	if(capturePoint.flagRenderer.material.color ~= foundMaterial.flagRenderer.color) then
 		-- wtf, something changed the color of our material, let's fix that
-		print("Something unexpectedly changed the color of the flag material, fixing..")
+		print("Something unexpectedly changed the color of a flag material, fixing..")
 		self:setPointMaterial(capturePoint)
 	end
 end
@@ -131,9 +129,9 @@ function MianFlagFramework:isSameMaterial(material, material2)
 end
 
 function MianFlagFramework:isOurMaterial(material)
-	for _, _material in pairs(self.TeamToMaterialData) do
-		if(_material.material == material) then
-			return _material.material;
+	for _, matData in pairs(self.TeamToMaterialData) do
+		if(self:isSameMaterial(matData.material, material)) then
+			return matData.material;
 		end
 	end
 	return false;
