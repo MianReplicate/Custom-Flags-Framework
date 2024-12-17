@@ -49,8 +49,8 @@ MonoBehaviour:
   mutators:
   - name: Custom Flags Framework
     description: A framework that is used to replace vanilla flag designs with your
-      own! This must be ENABLED BEFORE other flag mutators in order to function properly.
-    menuImage: {fileID: 2800000, guid: 7cb9c005c41bfec4d800e95c5e2747ec, type: 3}
+      own!
+    menuImage: {fileID: 2800000, guid: d3c14ea8963856f4da6a3b57ef709510, type: 3}
     mutatorPrefab: {fileID: 1450327976445928608}
     configuration:
       labels:
@@ -63,26 +63,42 @@ MonoBehaviour:
         displayName: This randomizes flag materials for Blue and Red team from all
           enabled flag mutators.
         orderPriority: 4
-      integers: []
+      integers:
+      - id: BlueRandomizeFlagMaterials
+        displayName: Randomize Flag(s) for Eagle
+        orderPriority: 5
+        value: 0
+      - id: RedRandomizeFlagMaterials
+        displayName: Randomize Flag(s) for Raven
+        orderPriority: 5
+        value: 0
+      - id: WaitForMutators
+        displayName: Wait Time for Flag Mutators (seconds)
+        orderPriority: 5
+        value: 1
       floats: []
       ranges: []
       strings:
-      - id: EagleFlagColor
+      - id: BlueFlagColor
         displayName: Eagle Flag Color
         orderPriority: 1
         value: 255,255,255
-      - id: RavenFlagColor
+      - id: RedFlagColor
         displayName: Raven Flag Color
         orderPriority: 2
         value: 255,255,255
+      - id: BlueFlagMaterial
+        displayName: Eagle Flag(s)
+        orderPriority: 2
+        value: 
+      - id: RedFlagMaterial
+        displayName: Raven Flag(s)
+        orderPriority: 2
+        value: 
       bools:
       - id: OverrideVanillaFlagColor
         displayName: Override Vanilla Flag Colors
         orderPriority: 3
-        value: 0
-      - id: RandomizeFlagMaterials
-        displayName: Randomize Flag Materials
-        orderPriority: 5
         value: 0
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
