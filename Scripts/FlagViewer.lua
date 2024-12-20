@@ -24,9 +24,11 @@ function FlagViewer:Start()
 	self.MutatorList = self.targets.MutatorList
 	self.FlagList = self.targets.FlagList
 	self.ActorSpawn = self.targets.ActorSpawn
+	self.Search = self.targets.Search.GetComponent(InputField)
 	self.MutatorTemplate.SetActive(false)
 	self.FlagTemplate.SetActive(false)
 
+	self.Search.onValueChanged.AddListener(self, "calculateSearch")
 	self.UIText.text = "LOADING..."
 	print("Hey this is my dummy flag for testing :): "..self.FlagMorpher.name)
 end
@@ -117,7 +119,16 @@ function FlagViewer:clickedMutator()
 			self:createFlagInList(matData)
 		end
 
+		self:calculateSearch(self.Search.text)
 		self:updateText()
+	end
+end
+
+function FlagViewer:calculateSearch(text)
+	if(not text) then return end
+
+	for _, flag in pairs(self.flagObjects) do
+		flag.SetActive(string.find(flag.GetComponentInChildren(Text).text, text:upper()) ~= nil)
 	end
 end
 
