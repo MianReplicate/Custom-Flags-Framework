@@ -287,7 +287,9 @@ function MianFlagFramework:Update()
 											print(returnValue)
 										end
 									else
-										matDatas = returnValue
+										for _, matData in pairs(returnValue) do
+											table.insert(matDatas, matData)
+										end
 									end
 								end
 							else
