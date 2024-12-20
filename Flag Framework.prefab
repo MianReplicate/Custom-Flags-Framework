@@ -59,10 +59,16 @@ MonoBehaviour:
           to alter the vanilla flag color or to change the color of a flag material
           from another mutator
         orderPriority: 2
+      - id: 
+        displayName: The framework will wait this amount of time between each added
+          texture to account for mutators loading after the framework. Increase this
+          slightly if log is ranting about textures being added after the registration
+          period.
+        orderPriority: 5
       integers:
       - id: WaitForMutators
         displayName: Wait Time for Flag Mutators (seconds)
-        orderPriority: 5
+        orderPriority: 6
         value: 1
       floats: []
       ranges: []

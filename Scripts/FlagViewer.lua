@@ -86,7 +86,7 @@ function FlagViewer:createFlagInList(matData)
 	name.color = color
 
 	image.onPointerClick.AddListener(self, "clickedFlag", matData)
-	table.insert(self.flagObjects, flag)
+	self.flagObjects[material.name] = flag
 	flag.SetActive(true)
 end
 
@@ -108,9 +108,9 @@ function FlagViewer:clickedMutator()
 	if(not self.selectedFlagMutator or (self.selectedFlagMutator and self.selectedFlagMutator.metadata.name ~= mutatorData.metadata.name)) then
 		self.selectedFlagMutator = mutatorData
 
-		for index, object in pairs(self.flagObjects) do
-			GameObject.Destroy(object)
-			table.remove(self.flagObjects, index)
+		for name, flag in pairs(self.flagObjects) do
+			GameObject.Destroy(flag)
+			self.flagObjects[name] = nil
 		end
 	
 		for _, matData in pairs(mutatorData.materialDatas) do
