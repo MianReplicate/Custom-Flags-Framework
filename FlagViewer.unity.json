@@ -1,0 +1,18 @@
+﻿{
+    "hasBuiltInGameMode": true,
+    "usesTriggerSystem": true,
+    "visibleInInstantAction": true,
+    "suggestedBots": 2,
+    "displayName": "Flag Viewer",
+    "hasNavalVehicles": false,
+    "hasGroundVehicles": false,
+    "hasAirVehicles": false,
+    "mapBiome": 0,
+    "mapTerrain": 0,
+    "mapDecorator": 0,
+    "loadingScreenBackgroundImage": "",
+    "loadingScreenModel": "",
+    "loadingScreenTexture": "",
+    "loadingScreenUseArtworkShader": false,
+    "loadingScreenFOV": 20.0
+}

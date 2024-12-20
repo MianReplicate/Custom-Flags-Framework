@@ -64,14 +64,6 @@ MonoBehaviour:
           enabled flag mutators.
         orderPriority: 4
       integers:
-      - id: BlueRandomizeFlagMaterials
-        displayName: Randomize Flag(s) for Eagle
-        orderPriority: 5
-        value: 0
-      - id: RedRandomizeFlagMaterials
-        displayName: Randomize Flag(s) for Raven
-        orderPriority: 5
-        value: 0
       - id: WaitForMutators
         displayName: Wait Time for Flag Mutators (seconds)
         orderPriority: 5
@@ -121,11 +113,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f8ca71ca01d2fb4098cb42abc5eceb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  source: {fileID: 4900000, guid: a157e08730b3aea40a99ab297fe3999c, type: 3}
+  source: {fileID: 2213920135882650261, guid: a157e08730b3aea40a99ab297fe3999c, type: 3}
   behaviour: 
   targets:
   - name: IsCloth
     value: {fileID: 1799220026407893892}
+  - name: TemplateMaterial
+    value: {fileID: 2100000, guid: 9ea8895454ecfd04d98fb700cf90694d, type: 2}
 --- !u!114 &-3565725640322070915
 MonoBehaviour:
   m_ObjectHideFlags: 0
