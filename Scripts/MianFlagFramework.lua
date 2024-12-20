@@ -163,11 +163,19 @@ function MianFlagFramework:addTextureData(mutatorData, texture, teamColor)
 end
 
 function MianFlagFramework:getMutatorMetadata(name)
-	return self.MutatorData[name].metadata
+	local mutatorData = self.MutatorData[string.upper(name)]
+	if(not mutatorData) then
+		error(name:upper().." is not a valid flag mutator!")
+	end
+	return mutatorData.metadata
 end
 
 function MianFlagFramework:getMaterialDatasFromMutator(name)
-	return self.MutatorData[string.upper(name)].materialDatas
+	local mutatorData = self.MutatorData[string.upper(name)]
+	if(not mutatorData) then
+		error(name:upper().." is not a valid flag mutator!")
+	end
+	return mutatorData.materialDatas
 end
 
 function MianFlagFramework:filterMaterialDatasForMutator(mutatorId, matDatas)
