@@ -71,6 +71,7 @@ function MianFlagFramework:Awake()
 	self.FinishedAddingTextures = false
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
+	self.OverlayLabel = GameObject.Find("Ingame UI Container(Clone)/New Ingame UI/Overlay Label Element/Overlay Label")
 
 	self.TeamToName = {
 		[Team.Blue] = "Blue",
@@ -338,7 +339,7 @@ function MianFlagFramework:Update()
 	end
 end
 
-function MianFlagFramework:autoSetPointMaterial(capturePoint)
+function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	local ownerToUse = capturePoint.pendingOwner or capturePoint.owner
 	local materials = self.TeamToMaterial[ownerToUse]
 	local length = self:getLengthOfDict(materials)
@@ -355,6 +356,22 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint)
 		end
 	end
 	material = material or self:getRandomFromDict(materials)
+
+	if(newOwner == ownerToUse and self.OverlayLabel.activeSelf) then
+		-- This means that the capture point was neutralized
+		local textComponent = self.OverlayLabel.GetComponent(Text)
+		local start, endI = textComponent.text:find("</color>")
+		local endingString = textComponent.text:sub(endI+1)
+
+		local matData = self:getMaterialData(material.name)
+		local displayName = matData.material.name
+		local tColor = matData.teamColor
+		local color = Color(tColor.r, tColor.g, tColor.b)
+		local colorTag = ColorScheme.RichTextColorTag(color)
+		local stringToUse = colorTag..displayName.."</color>"..endingString
+
+		textComponent.text = stringToUse
+	end
 
 	self:setPointMaterial(capturePoint, material)
 end

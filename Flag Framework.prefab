@@ -74,19 +74,19 @@ MonoBehaviour:
       ranges: []
       strings:
       - id: BlueFlagColor
-        displayName: Eagle Flag Color
+        displayName: <color=blue>Eagle Flag Color</color>
         orderPriority: 3
         value: 255,255,255
       - id: RedFlagColor
-        displayName: Raven Flag Color
+        displayName: <color=red>Raven Flag Color</color>
         orderPriority: 3
         value: 255,255,255
       - id: BlueFlagMaterial
-        displayName: Eagle Flag(s)
+        displayName: <color=blue>Eagle Flag(s)</color>
         orderPriority: 0
         value: 
       - id: RedFlagMaterial
-        displayName: Raven Flag(s)
+        displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 0
         value: 
       bools:

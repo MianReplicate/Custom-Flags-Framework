@@ -73,10 +73,17 @@ function FlagViewer:createMutatorInList(mutatorData)
 
 	image.onPointerClick.AddListener(self, "clickedMutator", mutatorData)
 	table.insert(self.mutatorObjects, mutator)
+
+	self.flagObjects[mutatorData.metadata.name] = {}
+
+	for _, matData in pairs(mutatorData.materialDatas) do
+		self:createFlagInList(metadata.name, matData)
+	end
+
 	mutator.SetActive(true)
 end
 
-function FlagViewer:createFlagInList(matData)
+function FlagViewer:createFlagInList(mutatorName, matData)
 	local flag = GameObject.Instantiate(self.FlagTemplate, self.FlagList.transform)
 	local image = flag.GetComponentInChildren(RawImage)
 	local name = flag.GetComponentInChildren(Text)
@@ -88,8 +95,7 @@ function FlagViewer:createFlagInList(matData)
 	name.color = color
 
 	image.onPointerClick.AddListener(self, "clickedFlag", matData)
-	self.flagObjects[material.name] = flag
-	flag.SetActive(true)
+	self.flagObjects[mutatorName][material.name] = flag
 end
 
 function FlagViewer:clickedFlag()
@@ -110,15 +116,6 @@ function FlagViewer:clickedMutator()
 	if(not self.selectedFlagMutator or (self.selectedFlagMutator and self.selectedFlagMutator.metadata.name ~= mutatorData.metadata.name)) then
 		self.selectedFlagMutator = mutatorData
 
-		for name, flag in pairs(self.flagObjects) do
-			GameObject.Destroy(flag)
-			self.flagObjects[name] = nil
-		end
-	
-		for _, matData in pairs(mutatorData.materialDatas) do
-			self:createFlagInList(matData)
-		end
-
 		self:calculateSearch(self.Search.text)
 		self:updateText()
 	end
@@ -127,8 +124,10 @@ end
 function FlagViewer:calculateSearch(text)
 	if(not text) then return end
 
-	for _, flag in pairs(self.flagObjects) do
-		flag.SetActive(string.find(flag.GetComponentInChildren(Text).text, text:upper()) ~= nil)
+	for mutatorName, flags in pairs(self.flagObjects) do
+		for _, flag in pairs(flags) do
+			flag.SetActive(mutatorName == self.selectedFlagMutator.metadata.name and string.find(flag.GetComponentInChildren(Text).text, text:upper()) ~= nil)
+		end
 	end
 end
 
