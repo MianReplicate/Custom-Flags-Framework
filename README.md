@@ -89,7 +89,7 @@ Step 3. Click the prefab file (blue square lookin' file), and add a new texture 
 
 Step 4. Rename the mutator, change the description, and replace the cover. Make sure to also replace the cover in the "Textures" dropdown in the "Data Container" section with yours.
 
-Step 5. Give the prefab file to a unique name. Also change the name of the lua file to the same name. Then open the file and replace all instances of the file's old name to the new name you set. This is required since the framework keeps track of what mutators add what flags.
+Step 5. Give the prefab file to a unique name. Also change the name of the lua file to the same name. Then open the lua file and replace all instances of the file's old name to the new name you set. This is required since the framework keeps track of what mutators add what flags.
 
 Step 6. Test out your mutator to see if it all works. Export the mutator by pressing Ctrl + E while the prefab is selected. Afterwards, start Ravenfield through Steam. If you have too many addons to where it becomes tedius to start up Ravenfield constantly, Steam allows you to disable your addons via the properties menu in the "Workshop" tab for the game. Then run the custom map "Flag Viewer" to see if your mutator pops up.
 
