@@ -55,9 +55,8 @@ MonoBehaviour:
     configuration:
       labels:
       - id: 
-        displayName: Customize the color of the flags below. This could be used just
-          to alter the vanilla flag color or to change the color of a flag material
-          from another mutator
+        displayName: Customize the color of the flags below. This could be used to
+          change the color of a flag material from another mutator
         orderPriority: 2
       - id: 
         displayName: The framework will wait this amount of time between each added

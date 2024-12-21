@@ -369,11 +369,6 @@ end
 
 function MianFlagFramework:setPointMaterial(capturePoint, material)
 	capturePoint.flagRenderer.material = material
-	if(self:isOurMaterial(material) or self.OverrideVanillaFlagColor) then
-		-- Have to be special here since Ravenfield just changes the color of their cloths for the teams
-		capturePoint.flagRenderer.material.color = material.color
-	end
-	capturePoint.flagRenderer.material.SetTextureScale("_MainTex", material.GetTextureScale("_MainTex"))
 end
 
 function MianFlagFramework:pendingOwner()
@@ -382,20 +377,6 @@ end
 
 function MianFlagFramework:onPendingOwnerChanged()
 	self:autoSetPointMaterial(CurrentEvent.listenerData)
-end
-
-function MianFlagFramework:isSameMaterial(material, material2)
-	return material.mainTexture == material2.mainTexture
-end
-
-function MianFlagFramework:isOurMaterial(material)
-	for _, texData in pairs(self:getAllTextureDatas()) do
-		if(texData.texture == material.mainTexture) then
-			return texData.texture
-		end
-	end
-
-	return false;
 end
 
 function MianFlagFramework:getRandomFromDict(dict)
