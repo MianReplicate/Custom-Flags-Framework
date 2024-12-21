@@ -142,7 +142,8 @@ function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	}
 
 	for index, texture in pairs(mutator.CustomFlags) do
-		mutatorTable.textureDatas[texture.name:upper()] = {texture=texture,teamColor=mutator.CustomFlagTeamColors[index]}
+		texture.name = texture.name:upper()
+		mutatorTable.textureDatas[texture.name] = {texture=texture,teamColor=mutator.CustomFlagTeamColors[index]}
 	end
 	
 	self.MutatorData[mutatorName] = mutatorTable
