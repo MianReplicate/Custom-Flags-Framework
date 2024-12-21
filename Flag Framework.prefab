@@ -64,11 +64,11 @@ MonoBehaviour:
           texture to account for mutators loading after the framework. Increase this
           slightly if log is ranting about textures being added after the registration
           period.
-        orderPriority: 5
+        orderPriority: 4
       integers:
       - id: WaitForMutators
         displayName: Wait Time for Flag Mutators (seconds)
-        orderPriority: 6
+        orderPriority: 5
         value: 1
       floats: []
       ranges: []
@@ -81,19 +81,15 @@ MonoBehaviour:
         displayName: <color=red>Raven Flag Color</color>
         orderPriority: 3
         value: 255,255,255
-      - id: BlueFlagMaterial
+      - id: BlueFlagTextures
         displayName: <color=blue>Eagle Flag(s)</color>
         orderPriority: 0
         value: 
-      - id: RedFlagMaterial
+      - id: RedFlagTextures
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 0
         value: 
       bools:
-      - id: OverrideVanillaFlagColor
-        displayName: Override Vanilla Flag Colors
-        orderPriority: 4
-        value: 0
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
         orderPriority: 1

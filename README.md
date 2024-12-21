@@ -15,7 +15,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - If you want to mix & match flag materials from other mutators that use this framework, you can do that!
 - You can have multiple flag materials for a team in one round! For example, Eagle could have two flag materials assigned to it, say Germany and Russia, that would mean that when capturing a flag, there is a random chance that either Germany or Russia will pop up as the flag.
 - Randomize a count of flag materials for a team. If you don't want to select the materials yourself, you can instead set a number for the amount of random flag materials the framework will assign to the specified team!
-- Customize the color of a flag. This works for both vanilla flags and custom flags.
+- Customize the color of a flag texture.
 - Automatically change a team's name to the name of its specified flag material. If you have multiple flag materials, it will use the first given flag's name with an additional "ALLIES" text.
 - Automatically change a team's color depending on the specified flag material. This is not to be confused with the flag's color. Authors of the mutators set this manually based on what they think best fits the flag. If you want to set colors manually, use "Team Config." If there are multiple flag materials for a team, the first one will be used for the team.
 

@@ -76,36 +76,35 @@ function FlagViewer:createMutatorInList(mutatorData)
 
 	self.flagObjects[mutatorData.metadata.name] = {}
 
-	for _, matData in pairs(mutatorData.materialDatas) do
-		self:createFlagInList(metadata.name, matData)
+	for _, texData in pairs(mutatorData.textureDatas) do
+		self:createFlagInList(metadata.name, texData)
 	end
 
 	mutator.SetActive(true)
 end
 
-function FlagViewer:createFlagInList(mutatorName, matData)
+function FlagViewer:createFlagInList(mutatorName, texData)
 	local flag = GameObject.Instantiate(self.FlagTemplate, self.FlagList.transform)
 	local image = flag.GetComponentInChildren(RawImage)
 	local name = flag.GetComponentInChildren(Text)
 
-	local material = Material(matData.material)
-	image.texture = material.mainTexture
-	name.text = material.name
-	local color = Color(matData.teamColor.r, matData.teamColor.g, matData.teamColor.b)
+	image.texture = texData.texture
+	name.text = texData.texture.name
+	local color = Color(texData.teamColor.r, texData.teamColor.g, texData.teamColor.b)
 	name.color = color
 
-	image.onPointerClick.AddListener(self, "clickedFlag", matData)
-	self.flagObjects[mutatorName][material.name] = flag
+	image.onPointerClick.AddListener(self, "clickedFlag", texData)
+	self.flagObjects[mutatorName][texData.texture.name] = flag
 end
 
 function FlagViewer:clickedFlag()
-	local matData = CurrentEvent.listenerData
-	local material = matData.material
-	local color = matData.teamColor
-	if(material.name ~= self.selectedFlag) then
-		self.framework:setPointMaterial(self.FlagMorpher, material)
+	local texData = CurrentEvent.listenerData
+	local texture = texData.texture
+	local color = texData.teamColor
+	if(texture.name ~= self.selectedFlag) then
+		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createMaterialFromTexture(Team.Blue,texture))
 		ColorScheme.setTeamColor(Team.Blue, Color(color.r, color.g, color.b))
-		self.selectedFlag = material.name
+		self.selectedFlag = texture.name
 
 		self:updateText()
 	end
