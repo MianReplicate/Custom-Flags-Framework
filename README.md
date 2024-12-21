@@ -85,7 +85,7 @@ Step 1. Download a unity.package file from one of my template. [Pride Flags](htt
 
 Step 2. Get an image (1024x512 recommended), and place it inside the Textures folder. Delete any textures that are not needed. Name these short and consistent. Their names will be displayed to users to assign to teams.
 
-Step 3. Click the prefab file (blue square lookin' file), and add a new texture in the "Texture" dropdown list within the "Data Container" section. Set the value to your texture. Ensure the ids are named in order with "Flag" preceding the number. Do the same thing for the "Color" dropdown list and assign a color to each specific flag. Use the color picker to grab a color from the flag or choose a color you think best fits.
+Step 3. Click the prefab file (blue square lookin' file), and add a new texture in the "Texture" dropdown list within the "Data Container" section. Set the value to your texture. Ensure the ids are named in order with "Flag" preceding the number. Do the same thing for the "Color" dropdown list and assign a color to each specific flag. Use the color picker to grab a color from the flag or choose a color you think best fits. The colors are an optional addition, but I recommend them so each flag has a color that the team color scheme can be set to.
 
 Step 4. Rename the mutator, change the description, and replace the cover. Make sure to also replace the cover in the "Textures" dropdown in the "Data Container" section with yours.
 
