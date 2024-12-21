@@ -5,6 +5,7 @@
 behaviour("MianFlagFramework")
 
 function MianFlagFramework:Awake()
+	self.gameObject.name = "Custom Flag Framework"
 	self.Flags = ActorManager.capturePoints
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
 	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
@@ -107,43 +108,47 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointNeutralized.AddListener(self,"autoSetPointMaterial")
 end
 
-function MianFlagFramework:addTextureData(mutatorData, texture, teamColor)
-	if(not mutatorData) then
-		error("No mutator data found, it was trying to add: "..texture.name)
+function MianFlagFramework:addTextureData()
+	error("Detected an outdated flag mutator script! Please get the newest lua file from GitHub.")
+end
+
+function MianFlagFramework:addTexturePack(mutatorName, mutator)
+	if(not mutator) then
+		error("No mutator found for texture pack..")
 	end
-	local mutatorName = mutatorData.name:upper()
-	local cover = mutatorData.cover
-	mutatorData.name = mutatorName
+
 	if(not mutatorName) then
 		error("A mutator just tried to add a texture without a mutator id!")
 	elseif(mutatorName and (mutatorName:match("{") or mutatorName:match("}") or mutatorName:match(":"))) then
 		error(mutatorName.." is an invalid name! Cannot have {, }, or : in the name!")
 	end
+
+	mutatorName = mutatorName:upper()
+	local cover = mutator.cover
+	local mutatorData = {name=mutatorName,cover=cover}
 	if(not cover) then
 		error(mutatorName.." failed to provide us with a cover we can use!")
 	end
 	if(self.FinishedAddingTextures) then
-		error(mutatorName.." just tried to add a texture outside of registration period. Cannot add "..texture.name)
+		error(mutatorName.." tried to add textures outside of registration period.")
 	end
-	if(not texture) then
-		error("No texture provided by "..mutatorName.."!")
+	if(self.MutatorData[mutatorName]) then
+		error(mutatorName.." already added its texture pack! Was the mutator name properly changed?")
 	end
-	local name = texture.name:upper()
-	if(self:getTextureData(name)) then
-		error("There is already a material added with this name: "..name)
-	end
-	texture.name = name
-	
-	local mutatorTable = self.MutatorData[string.upper(mutatorName)] or {
+
+	local mutatorTable = {
 		metadata = mutatorData,
 		textureDatas = {}
 	}
-	mutatorTable.textureDatas[name] = {texture=texture,teamColor=teamColor}
+
+	for index, texture in pairs(mutator.CustomFlags) do
+		mutatorTable.textureDatas[texture.name:upper()] = {texture=texture,teamColor=mutator.CustomFlagTeamColors[index]}
+	end
 	
-	self.MutatorData[string.upper(mutatorName)] = self.MutatorData[string.upper(mutatorName)] or mutatorTable
+	self.MutatorData[mutatorName] = mutatorTable
 	self.WaitTimer = self.DefaultWaitTimer
 
-	print("Created and added new material from "..mutatorName..": "..name)
+	print("Added new texture pack: "..mutatorName)
 end
 
 function MianFlagFramework:createMaterialFromTexture(team, texture)
