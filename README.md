@@ -83,7 +83,7 @@ Eagle Flag(s): {MUTATOR:MIANPOLTICALFLAGS:RANDOMIZE:2},{MUTATOR:MIANPRIDEFLAGS:A
 
 Step 1. Download a unity.package file from one of my template. [Pride Flags](https://github.com/MianReplicate/Pride-Flags) or [Political Flags](https://github.com/MianReplicate/Political-Flags) will work. Then import it into your Unity project (Must have RFTools for obvious reasons)
 
-Step 2. Get an image (1024x512 recommended), and place it inside the Textures folder. Delete any textures that are not needed. Name these short and consistent. Their names will be displayed to users to assign to teams.
+Step 2. Get an image (1024x512 recommended), and place it inside the Textures folder. Delete any textures that are not needed. Name these short, unique and consistent. Their names will be displayed to users to assign to teams. Avoid common names as the framework will not accept multiple textures that have the same names. This applies across other mutators as well.
 
 Step 3. Click the prefab file (blue square lookin' file), and add a new texture in the "Texture" dropdown list within the "Data Container" section. Set the value to your texture. Ensure the ids are named in order with "Flag" preceding the number. Do the same thing for the "Color" dropdown list and assign a color to each specific flag. Use the color picker to grab a color from the flag or choose a color you think best fits. The colors are an optional addition, but I recommend them so each flag has a color that the team color scheme can be set to.
 
