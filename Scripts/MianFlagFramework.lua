@@ -356,9 +356,9 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 
 		local texData = self:getTextureData(texture.name)
 		local displayName = (self.ChangeTeamNamesToFlagName and texture.name) or self.TeamToName[newOwner]
-		local tColor = texData.teamColor
+		local tColor = (self.ChangeTeamColorToFlagColor and texData.teamColor) or ColorScheme.GetTeamColor(newOwner)
 		local color = Color(tColor.r, tColor.g, tColor.b)
-		local colorTag = (self.ChangeTeamColorToFlagColor and ColorScheme.RichTextColorTag(color)) or ColorScheme.GetTeamColor(newOwner)
+		local colorTag = ColorScheme.RichTextColorTag(color)
 		local stringToUse = colorTag..displayName.."</color>"..endingString
 
 		textComponent.text = stringToUse
