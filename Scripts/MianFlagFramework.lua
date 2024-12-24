@@ -5,7 +5,7 @@
 behaviour("MianFlagFramework")
 
 function MianFlagFramework:Awake()
-	self.version = 1.0.0 -- were now keeping track of framework versions lmfao, i forgot to do this before, mb
+	self.version = "1.0.0" -- were now keeping track of framework versions lmfao, i forgot to do this before, mb
 	self.gameObject.name = "Custom Flag Framework"
 	self.Flags = ActorManager.capturePoints
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
@@ -123,6 +123,8 @@ function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	mutator.mutatorName = mutatorName
 	mutator.customFlags = mutator.CustomFlags
 	mutator.customFlagToTeamColors = mutator.CustomFlagTeamColors
+	mutator.version = "1.0.0"
+	mutator.frameworkVersion = "1.0.0"
 	self:addFlagPack(mutator)
 end
 --
@@ -133,6 +135,10 @@ function MianFlagFramework:addFlagPack(mutatorData)
 	end
 
 	local required = {
+		"version",
+		["frameworkVersion"] = function(value)
+			-- TODO: check if this value is less than ours to see if it is outdated
+		end,
 		"cover",
 		"customFlags",
 		"customFlagToTeamColors",
