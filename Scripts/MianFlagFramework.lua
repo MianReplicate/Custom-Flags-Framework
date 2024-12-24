@@ -5,6 +5,7 @@
 behaviour("MianFlagFramework")
 
 function MianFlagFramework:Awake()
+	self.version = 1.0.0 -- were now keeping track of framework versions lmfao, i forgot to do this before, mb
 	self.gameObject.name = "Custom Flag Framework"
 	self.Flags = ActorManager.capturePoints
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
@@ -289,7 +290,7 @@ function MianFlagFramework:Update()
 		if(self.WaitTimer <= 0) then
 			self.FinishedAddingTextures = true
 
-			self:log("All textures seem to have been added: Starting framework..")
+			self:log("All textures seem to have been added: Starting framework version "..self.version)
 			local TeamToName = self.TeamToName
 			TeamToName[Team.Neutral] = nil
 			local firstTeam = self:getRandomKeyFromDict(TeamToName)
