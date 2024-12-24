@@ -2,7 +2,7 @@
 behaviour("FlagViewer")
 
 function FlagViewer:Awake()
-	self.frameworkName = "Flag Framework(Clone)"
+	self.frameworkName = "Custom Flag Framework"
 	self.TimesChecked = 0
 
 	self.frameworkChecked = false
@@ -29,8 +29,8 @@ function FlagViewer:Start()
 	self.FlagTemplate.SetActive(false)
 
 	self.Search.onValueChanged.AddListener(self, "calculateSearch")
-	self.UIText.text = "LOADING..."
-	print("Hey this is my dummy flag for testing :): "..self.FlagMorpher.name)
+	self.UIText.text = "LOADING FLAG VIEWER..."
+	print("This is my dummy flag: "..self.FlagMorpher.name)
 end
 
 function FlagViewer:Update()
@@ -39,7 +39,7 @@ function FlagViewer:Update()
 		local obj = GameObject.Find(self.frameworkName)
 		if(obj) then
 			self.framework = ScriptedBehaviour.GetScript(obj)
-			print("Got framework! Initializing map..")
+			print("Got framework! Initializing Flag Viewer..")
 		end
 
 		if(self.TimesChecked > 100) then
@@ -90,7 +90,8 @@ function FlagViewer:createFlagInList(mutatorName, texData)
 
 	image.texture = texData.texture
 	name.text = texData.texture.name
-	local color = Color(texData.teamColor.r, texData.teamColor.g, texData.teamColor.b)
+	local teamColor = texData.teamColor
+	local color = (teamColor and Color(teamColor.r, teamColor.g, teamColor.b)) or Color(255, 255, 255)
 	name.color = color
 
 	image.onPointerClick.AddListener(self, "clickedFlag", texData)
@@ -100,7 +101,7 @@ end
 function FlagViewer:clickedFlag()
 	local texData = CurrentEvent.listenerData
 	local texture = texData.texture
-	local color = texData.teamColor
+	local color = texData.teamColor or ColorScheme.GetTeamColor(Team.Blue)
 	if(texture.name ~= self.selectedFlag) then
 		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createMaterialFromTexture(Team.Blue,texture))
 		ColorScheme.setTeamColor(Team.Blue, Color(color.r, color.g, color.b))
