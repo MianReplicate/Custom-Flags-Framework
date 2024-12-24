@@ -132,5 +132,5 @@ function FlagViewer:calculateSearch(text)
 end
 
 function FlagViewer:updateText()
-	self.UIText.text = "Installed Flag Mutators: "..self.installedFlagMutators.."\nSelected Flag Mutator: "..self.selectedFlagMutator.metadata.name.."\nSelected Flag: "..self.selectedFlag
+	self.UIText.text = "Framework Version: "..self.framework.version.."\nInstalled Flag Mutators: "..self.installedFlagMutators.."\nSelected Flag Mutator: "..self.selectedFlagMutator.metadata.name.."\nSelected Flag: "..self.selectedFlag
 end
