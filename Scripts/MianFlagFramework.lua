@@ -4,73 +4,180 @@
 
 behaviour("MianFlagFramework")
 
+local function splitString(string, separator)
+	return string:gmatch("([^"..separator.."]+)")
+end
+
+local function isCommand(syntax)
+	return syntax:match("{(.*)}")
+end
+
+local function findResults(str)
+    local results = {}
+
+    local commaStartingIdx = 1  -- Start looking from the first character
+    local braceStartingIdx = nil
+    local additionalBraces = 0
+
+    for i = 1, #str do
+        local char = str:sub(i, i)
+
+        if(char == "{") then
+          if(not braceStartingIdx) then
+              braceStartingIdx = i
+          else
+              additionalBraces = additionalBraces + 1
+          end
+        elseif(char == "}") then
+          if(additionalBraces > 0) then
+            additionalBraces = additionalBraces - 1
+          else
+              table.insert(results, str:sub(braceStartingIdx, i))
+              braceStartingIdx = nil
+              commaStartingIdx = i + 1 -- Move start index after the closing brace
+          end
+        end
+
+        if(not braceStartingIdx) then
+            if(char == ",") then
+                if(commaStartingIdx and commaStartingIdx < i) then
+                    table.insert(results, str:sub(commaStartingIdx, i - 1))
+                end
+                commaStartingIdx = i + 1 -- Move index to next character
+            end
+        end
+    end
+
+    -- Add the last segment if no trailing comma
+    if(commaStartingIdx <= #str) then
+        table.insert(results, str:sub(commaStartingIdx))
+    end
+
+    return results
+end
+
+local function findArgResults(str)
+    local results = {}
+
+    local colonStartingIndex = 1
+    local braceCount = 0
+
+    for i = 1, #str do
+        local char = str:sub(i, i)
+        
+        if(char == "{") then
+          braceCount = braceCount + 1
+        elseif(char == "}") then
+          braceCount = braceCount - 1
+        end
+		
+		if(char == ":" and braceCount <= 0)then
+            table.insert(results, str:sub(colonStartingIndex, i-1))
+            colonStartingIndex = i + 1 -- Move start index after the closing brace
+        end
+
+    end
+    table.insert(results, str:sub(colonStartingIndex, #str))
+
+    return results
+end
+
+
 function MianFlagFramework:Awake()
-	self.version = "1.0.0" -- were now keeping track of framework versions lmfao, i forgot to do this before, mb
+	self.version = "2.0.0"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Flags = ActorManager.capturePoints
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
 	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
 	self.DefaultWaitTimer = self.script.mutator.GetConfigurationInt("WaitForMutators")
-
+	self.IgnoreFailedCapturePoint = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
+	self.AlertedUser = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
 
 	-- This shows all the textures for one team
 	self.TeamToTexture = {}
 	self.MutatorData = {}
 
-	-- NEW WORK IN PROGRESS UPDATED SYNTAX
-	-- {TEAM:NAME:{FLAG}:TEAMNAME}
-	-- {TEAM:COLOR:{FLAG}:255,255,255}
-	-- {MUTATOR:{MUTATORID}:ALL}
-	-- {MUTATOR:{MUTATORID}:RANDOMIZE} = {MUTATOR:MIANPOLITICALFLAGS,MIANPRIDEFLAGS:RANDOMIZE}
 	self.runnableStringCommands = {
-		["MUTATOR"] = function (mutatorId, decision, amount)
-			local textureDatas = self:getTextureDatasFromMutator(mutatorId)
-			if(textureDatas) then
-				local texDatas = {}
-				if(decision == "ALL") then
-					texDatas = textureDatas
-				elseif(decision == "RANDOMIZE") then
-					amount = tonumber(amount)
-					if(not amount) then
-						error("Invalid amount: "..amount)
-					end
-
-					local randomizationPool = {}
-					for name, _ in pairs(self:filterTextureDatasForMutator(mutatorId, self:getAllNonUsedTextureDatas())) do
-						table.insert(randomizationPool, name)
-					end
-					while(amount > 0) do
-						if(#randomizationPool <= 0) then break end -- no more to pull from :<
-
-						local randomIndex = math.random(1, #randomizationPool)
-						local randomTex = randomizationPool[randomIndex]
-						table.remove(randomizationPool, randomIndex)
-						amount = amount - 1
-
-						table.insert(texDatas, self:getTextureData(randomTex))
-					end
-				elseif(decision == "FIRST" or decision == "LAST") then
-					amount = tonumber(amount)
-					if(not amount) then
-						error("Invalid amount: "..amount)
-					end
-
-					local pool = {}
-					for name, _ in pairs(textureDatas) do
-						table.insert(pool, name)
-					end
-
-					for i = 1, amount, 1 do
-						local indexToUse = (decision == "FIRST" and i) or (#pool + 1) - i
-						table.insert(texDatas, self:getTextureData(pool[indexToUse]))
+		ALLMUTATORS = function()
+			local names = {}
+			for name, _ in pairs(self.MutatorData) do
+				table.insert(names, name)
+			end
+			return names
+		end,
+		ALL = function(mutatorIds)
+			local names = {}
+			local unusedFlags = self:getAllNonUsedTextureDatas()
+			for _, mutatorId in ipairs(mutatorIds) do
+				local success, texDatas = pcall(self.getTextureDatasFromMutator, self, mutatorId)
+				if(success and texDatas) then
+					for name, _ in pairs(texDatas) do
+						if(not unusedFlags or unusedFlags[name]) then
+							table.insert(names, name)
+						end
 					end
 				end
-
-				return texDatas
+			end
+			return names
+		end,
+		RANDOMIZE = function(flags, amount)
+			if(amount ~= "EXACT") then
+				amount = tonumber(amount[1])
 			else
-				error("Invalid mutator id: "..mutatorId)
+				amount = nil
+			end
+
+			if(not amount) then
+				error("Invalid amount: "..amount)
+			end
+
+			local randomizationPool = {}
+			local unusedFlags = self:getAllNonUsedTextureDatas()
+			for _, name in ipairs(flags) do
+				if(not unusedFlags or unusedFlags[name]) then
+					table.insert(randomizationPool, name)
+				end
+			end
+
+			if(amount == 'EXACT') then
+				amount = #flags
+			end
+
+			local names = {}
+			while(amount > 0) do
+				if(#randomizationPool <= 0) then break end -- no more to pull from :<
+
+				local randomIndex = math.random(1, #randomizationPool)
+				local randomName = randomizationPool[randomIndex]
+				table.remove(randomizationPool, randomIndex)
+				amount = amount - 1
+
+				table.insert(names, randomName)
+			end
+
+			return names
+		end,
+		TEAMNAME = function(flags, name)
+			name = name[1]
+			for _, flagName in ipairs(flags) do
+				local texData = self:getTextureData(flagName)
+				texData.teamName = name
 			end
 		end,
+		TEAMCOLOR = function(flags, color)
+			local newColor = Color(tonumber(color[1]), tonumber(color[2]), tonumber(color[3]))
+			for _, flagName in ipairs(flags) do
+				local texData = self:getTextureData(flagName)
+				texData.teamColor = newColor
+			end
+		end,
+		FLAGCOLOR = function(flags, color)
+			local newColor = Color(tonumber(color[1]), tonumber(color[2]), tonumber(color[3]))
+			for _, flagName in ipairs(flags) do
+				local texData = self:getTextureData(flagName)
+				texData.overrideMaterialColor = newColor
+			end
+		end
 	}
 	self.WaitTimer = self.DefaultWaitTimer
 	self.FinishedAddingTextures = false
@@ -83,20 +190,6 @@ function MianFlagFramework:Awake()
 		[Team.Red] = "Red", 
 		[Team.Neutral] = "Neutral"
 	}
-	self.TeamToFlagColor = {
-		[Team.Blue] = {},
-		[Team.Red] = {}
-	}
-
-	for team, name in pairs(self.TeamToName) do
-		if(name ~= "Neutral") then
-			local color = self.script.mutator.GetConfigurationString(name.."FlagColor")
-			for value in string.gmatch(color, '([^,]+)') do
-				local number = tonumber(value) or 255
-				table.insert(self.TeamToFlagColor[team], math.max(0, math.min(255, number)) / 255)
-			end
-		end
-	end
 
 	for team, _ in pairs(self.TeamToName) do
 		self.TeamToTexture[team] = {}
@@ -113,69 +206,65 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointNeutralized.AddListener(self,"autoSetPointMaterial")
 end
 
--- The two functions below are deprecated, they will be removed sometime in the future..
+-- The two functions below are to handle compatiblity with old mutator packs
 function MianFlagFramework:addTextureData()
 	error("Detected an outdated flag mutator script! Please get the newest lua file from GitHub. This function is only here to tell you this. Otherwise it does absolutely nothing.")
 end
 
 function MianFlagFramework:addTexturePack(mutatorName, mutator)
-	self:log("<color=RED>You are using a deprecated function for the Custom Flags Framework. This is only here to prevent old mutators from breaking. Please get the newest lua file for flag packs from GitHub.</color>")
-	mutator.mutatorName = mutatorName
+	mutator.name = mutatorName
 	mutator.customFlags = mutator.CustomFlags
+	mutator.CustomFlags = nil
 	mutator.customFlagToTeamColors = mutator.CustomFlagTeamColors
-	mutator.version = "1.0.0"
-	mutator.frameworkVersion = "1.0.0"
+	mutator.CustomFlagTeamColors = nil
 	self:addFlagPack(mutator)
 end
 --
-
 function MianFlagFramework:addFlagPack(mutatorData)
 	if(not mutatorData) then
 		error("A flag pack is trying to add flag textures without metadata! Cannot proceed")
 	end
 
 	local required = {
-		"version",
-		["frameworkVersion"] = function(value)
-			-- TODO: check if this value is less than ours to see if it is outdated
-		end,
-		"cover",
-		"customFlags",
-		"customFlagToTeamColors",
-		["mutatorName"] = function(value)
+		cover = nil,
+		customFlags = nil,
+		customFlagToTeamColors = nil,
+		name = function(value)
 			if(value:match("{") or value:match("}") or value:match(":")) then
 				error(value.." is an invalid name! Cannot have {, }, or : in the name!")
+			else
+				mutatorData.name = value:upper()
 			end
 		end
 	}
 
 	for key, validate in pairs(required) do
 		if(not mutatorData[key]) then
-			error("A flag pack is missing some required metadata, please get the newest lua file from one of my template flag packs if you are the developer. The missing metadata is: "..key)
+			local name = mutatorData.name or "A flag pack"
+			error(name.." is missing some required metadata, please get the newest lua file from one of my template flag packs if you are the developer. The missing metadata is: "..key)
 		elseif(validate) then
 			validate(mutatorData[key])
 		end
 	end
 	
-	local mutatorName = mutatorData.mutatorName
-	mutatorData.mutatorName = mutatorName:upper()
+	local name = mutatorData.name
 
 	if(self.FinishedAddingTextures) then
-		error(mutatorName.." just tried to add flag textures outside of registration period. Try increasing the wait time in the framework settings.")
+		error(name.." just tried to add flag textures outside of registration period. Try increasing the wait time in the framework settings.")
 	end
 
-	if(self.MutatorData[mutatorName]) then
-		self:log("<color=RED>A flag mutator with the name, "..mutatorName..", is already known. The developer should really change the name of this mutator but for now, we can use fallback code to register the mutator under a different name. Please tell the developer to change their mutator's name</color>")
+	if(self.MutatorData[name]) then
+		self:log("<color=RED>A flag mutator with the name, "..name..", is already known. The developer should really change the name of this mutator but for now, we can use fallback code to register the mutator under a different name. Please tell the developer to change their mutator's name</color>")
 		local dupe = 0
 		local tryName
 		repeat
 			dupe = dupe + 1
-			tryName = mutatorName.."_"..dupe
+			tryName = name.."_"..dupe
 		until not self.MutatorData[tryName]
-		mutatorName = tryName
+		name = tryName
 	end
 
-	local mutatorData = {name=mutatorName,cover=mutatorData.cover}
+	self.AddingFlagPack = true
 	local mutatorTable = {
 		metadata = mutatorData,
 		textureDatas = {}
@@ -183,23 +272,48 @@ function MianFlagFramework:addFlagPack(mutatorData)
 
 	for index, texture in pairs(mutatorData.customFlags) do
 		texture.name = texture.name:upper()
-		mutatorTable.textureDatas[texture.name] = {texture=texture,teamColor=mutatorData.customFlagToTeamColors[index]}
+		local nameToUse = texture.name
+
+		local alreadyExists = self:getTextureData(nameToUse)
+		if(alreadyExists) then
+			local repeatCount = 0
+			local testName = nameToUse
+			repeat
+				repeatCount = repeatCount + 1
+				testName = nameToUse.."_"..repeatCount
+			until not self:getTextureData(testName)
+			nameToUse = testName
+		end
+		texture.name = nameToUse
+		mutatorTable.textureDatas[nameToUse] = {texture=texture,teamColor=mutatorData.customFlagToTeamColors[index],teamName=texture.name,overrideMaterialColor=nil}
 	end
 	
-	self.MutatorData[mutatorName] = mutatorTable
+	self.MutatorData[name] = mutatorTable
 	self.WaitTimer = self.DefaultWaitTimer
+	self.AddingFlagPack = false
 
-	self:log("Added new texture pack: "..mutatorName)
+	self:log("Added new texture pack: "..name)
 end
 
-function MianFlagFramework:createMaterialFromTexture(team, texture)
+function MianFlagFramework:createMaterialFromTexData(team, texData, texture)
 	local material = Material(self.TemplateMaterial)
-	material.SetTexture("_MainTex", texture)
-	material.name = texture.name:upper()
+	if(not texData) then
+		material.SetTexture("_MainTex", texture)
+		material.name = texture.name:upper()
+	else
+		material.SetTexture("_MainTex", texData.texture)
+		material.name = texData.teamName:upper()
+	end
+
 	local yScale = (self.IsCloth.activeSelf and 1.4) or 1
 	material.SetTextureScale("_MainTex", Vector2(1, yScale))
-	local customFlagColor = self.TeamToFlagColor[team]
-	material.color = Color(customFlagColor[1],customFlagColor[2],customFlagColor[3],1)
+
+	if(texData) then
+		local customFlagColor = texData.overrideMaterialColor
+		if(customFlagColor) then
+			material.color = Color(customFlagColor[1],customFlagColor[2],customFlagColor[3],1)
+		end
+	end
 
 	return material
 end
@@ -292,7 +406,10 @@ end
 
 function MianFlagFramework:Update()
 	if(not self.FinishedAddingTextures) then
-		self.WaitTimer = self.WaitTimer - Time.deltaTime
+		if(not self.AddingFlagPack) then
+			self.WaitTimer = self.WaitTimer - Time.deltaTime
+		end
+
 		if(self.WaitTimer <= 0) then
 			self.FinishedAddingTextures = true
 
@@ -308,96 +425,68 @@ function MianFlagFramework:Update()
 			
 			for team, name in pairs(TeamToName) do
 				local textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
-				
 				local texDatas = {}
-
-				local function isSyntax(syntax)
-					return syntax:match("{(.*)}")
-				end
 	
-				local function runSyntaxCheck(name)
-					if(isSyntax(name)) then
-						local syntax = name:upper()
-						local begin, endI, command = syntax:find("([^:]+)")
-						local splitCommandData = syntax:sub(endI+1)
-						local commandFunction = self.runnableStringCommands[command]
-						if(commandFunction) then
-							local args = {}
-							
-							for arg in splitCommandData:gmatch('([^:]+)') do
-								local returnArg
-								for listArg in splitCommandData:gmatch('([^,]+)') do
-									returnArg = returnArg or {}
+				local function executeCommandFromSyntax(syntax)
+					syntax = syntax:upper()
+					local _, endIndex, command = syntax:find("([^:]+)")
+					local argStrings = syntax:sub(endIndex+2)
+
+					local commandFunction = self.runnableStringCommands[command]
+					if(commandFunction) then
+						local args = {}
+						for _, arg in ipairs(findArgResults(argStrings)) do
+							local returnArg = {}
+							for _, listArg in ipairs(findResults(arg)) do
+								local command = isCommand(listArg)
+								if(command) then
+									local success, argsFromCommand = executeCommandFromSyntax(command)
+									if(argsFromCommand) then
+										for _, newArg in pairs(argsFromCommand) do
+											table.insert(returnArg, newArg)
+										end
+									end
+								else
 									table.insert(returnArg, listArg)
 								end
-								returnArg = returnArg or arg
-								table.insert(args, returnArg)
 							end
-		
-							for index, arg in pairs(args) do
-								if(isSyntax(arg)) then
-									args[index] = runSyntaxCheck(arg)
-								end
-							end
-		
-							local success, returnValue = pcall(commandFunction, table.unpack(args))
-		
-							if(not success) then
-								self:log("<color=red>Syntax failed: "..syntax.."</color>")
-								if(returnValue) then
-									self:log("<color=red>"..returnValue.."</color>")
-								end
-							else
-								local returnedArgs = {}
-								for _, arg in pairs(returnValue) do
-									table.insert(returnedArgs, arg)
-								end
-								return returnedArgs
+							table.insert(args, returnArg)
+						end
+
+						local success, returnValue = pcall(commandFunction, table.unpack(args))
+	
+						if(not success) then
+							self:log("<color=red>Syntax failed: "..syntax.."</color>")
+							if(returnValue) then
+								self:log("<color=red>"..returnValue.."</color>")
 							end
 						end
-					else
-						local texData = self:getTextureData(name)
-						if(texData) then
-							self:putTextureForTeam(team, texData)
-							table.insert(texDatas, texData)
-						else
-							self:log(name.." is an invalid texture! Did you name it incorrectly?")
-						end
+
+						return success, returnValue
 					end
 				end
 
 				if(self:getLengthOfDict(self:getAllTextureDatas()) > 0) then
-					for name in textures:gmatch('([^,]+)') do
-						-- runSyntaxCheck(name)
+					for _, name in ipairs(findResults(textures)) do
 						
-						local syntax = isSyntax(name)
-						if(syntax) then
-							syntax = syntax:upper()
-							local begin, endI, command = syntax:find("([^:]+)")
-							local splitCommandData = syntax:sub(endI+1)
-							local commandFunction = self.runnableStringCommands[command]
-							if(commandFunction) then
-								local args = {}
-								
-								for arg in splitCommandData:gmatch('([^:]+)') do
-									table.insert(args, arg)
-								end
-
-								local success, returnValue = pcall(commandFunction, table.unpack(args))
-
-								if(not success) then
-									self:log("Failed to get textures from command: "..syntax)
-									if(returnValue) then
-										self:log(returnValue)
-									end
-								else
-									for _, texData in pairs(returnValue) do
+						local command = isCommand(name)
+						local success, results = false, nil
+						if(command) then
+							success, results = executeCommandFromSyntax(command)
+							if(results) then
+								for _, _name in ipairs(results) do
+									local texData = self:getTextureData(_name)
+									if(texData) then
 										self:putTextureForTeam(team, texData)
 										table.insert(texDatas, texData)
+									else
+										self:log(_name.." is an invalid texture! Did you name it incorrectly?")
 									end
 								end
 							end
-						else
+						end
+
+						if(not success) then
 							local texData = self:getTextureData(name)
 							if(texData) then
 								self:putTextureForTeam(team, texData)
@@ -415,7 +504,7 @@ function MianFlagFramework:Update()
 				if(firstTexData and lastTexData) then
 					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)")
 					if(self.ChangeTeamNamesToFlagName) then
-						local name = (firstTexData == lastTexData and firstTexData.texture.name:upper()) or firstTexData.texture.name:upper().." ALLIES"
+						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
 				
 						GameManager.SetTeamName(team, name)
 						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
@@ -430,7 +519,7 @@ function MianFlagFramework:Update()
 
 					for _, capturePoint in pairs(self.Flags) do
 						if(capturePoint.owner == team) then
-							self:setPointMaterial(capturePoint, self:createMaterialFromTexture(team, firstTexData.texture))
+							self:setPointMaterial(capturePoint, self:createMaterialFromTexData(team, firstTexData))
 						end
 					end
 				end
@@ -460,6 +549,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		end
 	end
 	texture = texture or self:getRandomValueFromDict(textures)
+	local texData = self:getTextureData(texture.name)
 
 	if(newOwner == ownerToUse and self.OverlayLabel.activeSelf) then
 		-- This means that the capture point was neutralized
@@ -467,8 +557,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		local start, endI = textComponent.text:find("</color>")
 		local endingString = textComponent.text:sub(endI+1)
 
-		local texData = self:getTextureData(texture.name)
-		local displayName = (self.ChangeTeamNamesToFlagName and texture.name) or self.TeamToName[newOwner]
+		local displayName = (self.ChangeTeamNamesToFlagName and texData.teamName) or self.TeamToName[newOwner]
 		local tColor = (self.ChangeTeamColorToFlagColor and texData.teamColor) or ColorScheme.GetTeamColor(newOwner)
 		local color = Color(tColor.r, tColor.g, tColor.b)
 		local colorTag = ColorScheme.RichTextColorTag(color)
@@ -477,11 +566,20 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		textComponent.text = stringToUse
 	end
 
-	self:setPointMaterial(capturePoint, self:createMaterialFromTexture(ownerToUse, texture))
+	self:setPointMaterial(capturePoint, self:createMaterialFromTexData(ownerToUse, texData, texture))
 end
 
 function MianFlagFramework:setPointMaterial(capturePoint, material)
-	capturePoint.flagRenderer.material = material
+	local success = pcall(function() 
+		capturePoint.flagRenderer.material = material
+	end)
+	if(not success) then
+		if(not self.AlertedUser) then
+			self.AlertedUser = true
+			self.gameObject.GetComponent(TriggerScriptedSignal).Send("capturePointNotCompatible")
+		end
+		self:log("<color=#FF0000>Failed to change "..capturePoint.name:upper().."'s flag!</color>")
+	end
 end
 
 function MianFlagFramework:pendingOwner()
@@ -519,5 +617,7 @@ function MianFlagFramework:log(...)
 end
 
 function MianFlagFramework:getTexNameFlair(texData)
-	return ColorScheme.RichTextColorTag(Color(texData.teamColor.r, texData.teamColor.g, texData.teamColor.b))..texData.texture.name.."</color>"
+	if(not texData) then return "" end
+	local colorToUse = texData.teamColor or Color(255, 255, 255)
+	return ColorScheme.RichTextColorTag(Color(colorToUse.r, colorToUse.g, colorToUse.b))..texData.texture.name.."</color>"
 end
