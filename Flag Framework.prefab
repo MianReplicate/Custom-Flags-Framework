@@ -168,18 +168,16 @@ MonoBehaviour:
   lines:
   - actorPose: p advisor
     overrideName: Mian
-    text: 'Heads up <player>! I''ve gotten word from the people at the <color=#fc0fc0>Custom
-      Flags Framework</color> that some of the points within <map> are special, preventing
-      us from editing them.
-
-'
+    text: Heads up <color=#66ff00><player></color>! Just wanted to let you know from
+      the <color=#fc0fc0>Custom Flags Framework</color> that some of the flags within
+      <map> are <color=red>unable</color> to be changed.
     portraitGrain: 0
     onSayLine:
       destinations: []
     blipSoundPlayback: 0
     overrideBlipSound: 0
     overrideBlipCustomClip: {fileID: 0}
-    duration: 7
+    duration: 11
   onDialogComplete:
     destinations: []
   stopActiveDialogOnComponentDisabled: 1
