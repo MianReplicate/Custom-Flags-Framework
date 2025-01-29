@@ -20,7 +20,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - Automatically change a team's color depending on the specified flag material. This is not to be confused with the flag's color. Authors of the mutators set this manually based on what they think best fits the flag. If you want to set colors manually, use "Team Config." If there are multiple flag materials for a team, the first one will be used for the team.
 
 # Syntax/How to add flags to teams
-- Find more information here on the [SYNTAX INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/main/SYNTAX-INFO.md)
+- Find more information here on the [SYNTAX INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/SYNTAX-INFO.md)
 
 # FAQ
 ### I found a bug/I wanna suggest a new idea!
@@ -29,4 +29,4 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 
 ### How to create my own flag mutators?
 
-- Find more information here on the [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/main/TEMPLATE-INFO.md)
+- Find more information here on the [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/TEMPLATE-INFO.md)
