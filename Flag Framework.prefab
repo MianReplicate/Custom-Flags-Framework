@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 6726400015927089120}
   - component: {fileID: -2283702999148705195}
   - component: {fileID: -3565725640322070915}
+  - component: {fileID: 1726073807400080023}
+  - component: {fileID: -4502803138041493914}
   m_Layer: 0
   m_Name: Flag Framework
   m_TagString: Untagged
@@ -55,15 +57,16 @@ MonoBehaviour:
     configuration:
       labels:
       - id: 
-        displayName: Customize the color of the flags below. This could be used to
-          change the color of a flag material from another mutator
-        orderPriority: 2
-      - id: 
         displayName: The framework will wait this amount of time between each added
           texture to account for mutators loading after the framework. Increase this
           slightly if log is ranting about textures being added after the registration
           period.
         orderPriority: 4
+      - id: 
+        displayName: Paste or type in your configurations in the two teams below!
+          Preferably you should use the "Flag Viewer" map to create your output,
+          however if you want, you can also type manually.
+        orderPriority: 0
       integers:
       - id: WaitForMutators
         displayName: Wait Time for Flag Mutators (seconds)
@@ -72,32 +75,49 @@ MonoBehaviour:
       floats: []
       ranges: []
       strings:
-      - id: BlueFlagColor
-        displayName: <color=blue>Eagle Flag Color</color>
-        orderPriority: 3
-        value: 255,255,255
-      - id: RedFlagColor
-        displayName: <color=red>Raven Flag Color</color>
-        orderPriority: 3
-        value: 255,255,255
       - id: BlueFlagTextures
         displayName: <color=blue>Eagle Flag(s)</color>
-        orderPriority: 0
+        orderPriority: 1
         value: 
       - id: RedFlagTextures
         displayName: <color=red>Raven Flag(s)</color>
-        orderPriority: 0
+        orderPriority: 1
         value: 
       bools:
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
-        orderPriority: 1
+        orderPriority: 3
         value: 0
       - id: ChangeTeamColorToFlagColor
         displayName: Change Team Color from Flag
-        orderPriority: 1
+        orderPriority: 3
         value: 0
-      dropdowns: []
+      - id: IgnoreFailedCapturePoint
+        displayName: Ignore Non-Changeable Capture Points
+        orderPriority: 6
+        value: 0
+      - id: AvoidDupeColors
+        displayName: Auto Change Dupe Team Colors
+        orderPriority: 7
+        value: 1
+      - id: FunnyMode
+        displayName: funny mode (dont enable this seriously you will kill your eyes)
+        orderPriority: 9
+        value: 0
+      - id: AvoidDupeFlags
+        displayName: Auto Rename Dupe Flag Names
+        orderPriority: 8
+        value: 1
+      dropdowns:
+      - id: ExecuteConfigForTeam
+        displayName: What Team's Config to Execute First
+        orderPriority: 2
+        value:
+          index: 0
+          labels:
+          - <color=blue>EAGLE</color>
+          - <color=red>RAVEN</color>
+          - <color=#fc0fc0>RANDOMIZE</color>
 --- !u!114 &-2283702999148705195
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -132,6 +152,54 @@ MonoBehaviour:
   option: 10
   trueObject: {fileID: 1799220026407893892}
   falseObject: {fileID: 0}
+--- !u!114 &1726073807400080023
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25180ebf807ab1247b56be71f8977fe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  repeatType: 0
+  lines:
+  - actorPose: p advisor
+    overrideName: Mian
+    text: 'Heads up <player>! I''ve gotten word from the people at the <color=#fc0fc0>Custom
+      Flags Framework</color> that some of the points within <map> are special, preventing
+      us from editing them.
+
+'
+    portraitGrain: 0
+    onSayLine:
+      destinations: []
+    blipSoundPlayback: 0
+    overrideBlipSound: 0
+    overrideBlipCustomClip: {fileID: 0}
+    duration: 7
+  onDialogComplete:
+    destinations: []
+  stopActiveDialogOnComponentDisabled: 1
+--- !u!114 &-4502803138041493914
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fca55cd731a4d37449323b9d11f213b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  signals:
+  - name: capturePointNotCompatible
+    send:
+      destinations:
+      - {fileID: 1726073807400080023}
 --- !u!1 &1799220026407893892
 GameObject:
   m_ObjectHideFlags: 0

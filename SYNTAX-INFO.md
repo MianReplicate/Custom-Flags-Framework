@@ -1,54 +1,100 @@
-# Syntax/How to add flags to teams
-Here is some information to note before adding flags to your teams
+# How to add flags to teams
 
-Everything is separated by commas! You'll see an example at the end of this category if you do not know what I mean.
+To set up your configuration, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
 
-The syntax is NOT case sensitive! It will not matter whether you capitalize a word or not in any shape or form.
+## Assigning by Flag Name
+Search for the flag you want and click it. This will add it to your output to the top. Once you've finished configuring, copy your output. Then leave the game, go to the CONFIGURATION menu for the framework mutator, and paste your output into either "Eagle Flag(s)" or "Raven Flag(s)".
 
-The order of the list matters! If you want the framework to use a color and name from a certain flag material for your team, that FLAG must be typed first!
+Keep in mind that you can add MULTIPLE flags to a team. For instance, if you capture a flag and the team has multiple flags, a random one will be chosen for the capture point.
 
-Make sure the flag mutators you want to use are ENABLED! You can confirm this by using the "Flag Viewer" map.
+<img src="https://i.imgur.com/czXAVYu.png"> 
 
-Use the "Flag Viewer" map if you do not know the name/id of a flag or mutator!
+This would assign Belgium and Brazil to the team with this config.
 
-## Assigning by name
-When assigning a flag to a team, type in its name/id. Make sure to not have spaces in places that are unneeded.
+## Assigning by Commands (OPTIONAL, ADVANCED)
+**WARNING: This sort of configuration is advanced and you might get lost. This is not required to learn. However it CAN be super useful if you are a person looking to create some interesting configurations.**
 
-**Example**
+So what are commands all about? Well, to begin with, they can let you RANDOMIZE the flags that you have for a team. They also let you override the team colors/names set up for a flag material. You could also use them to grab every single flag from a flag pack that you have! Yes, that means you would NOT have to add every single flag manually from a flag pack separated by commas IF you wanted every single flag.
 
-Eagle Flag(s): USA,UK,germany,rUssiA -- This will assign USA, UK, Germany, and Russia flags to the Eagle team! Since USA is first, it will be used for determining team color and name if the option is enabled.
+If the above has enticed you, then you are in the right spot! If not, you can back away from this configuration method. Otherwise, carry on.
 
-## Assigning via commands
-To tell the framework you are going to use a command, start your string with a "{" and end it with a "}" when finished writing it.
+To begin using a command, you want to press the one you want on the left. For the example I will be showing, I'll be getting every single flag from a pack and assigning it to one team.
 
-In order for the framework to know what command you want to use, you have to write its name. In this case, we can use the command "MUTATOR", This command will let you mass add flags from a mutator or randomize them.
+To start with, press the "ALL" button. Notice how the command looks in the output? Commands start and end with brackets. This is how the framework knows you are using a command. You might also notice that first word in the brackets is "ALL." This tells the framework you are trying to use the "ALL" command. 
 
-Then, you need to write any parameters after the command that it may need, separated with a ":" in between each. In this example, "MUTATOR" needs a mutator id, a decision of what to do with that mutator, and an additional parameter that changes depending on what you are doing with the mutator.
+Additionally you'll notice there is a colon. The colon is there to separate what is known as ARGUMENTS. ARGUMENTS are information that is sent over to the command to tell it more on what to do and how to operate. In this case, the "ALL" command needs a list of mutators. Highlight the text after the colon and delete. Be careful NOT to delete the END bracket of the command. Then make sure your pointer (the blinking cursor) is located right after the colon. This matters because this tells the framework EXACTLY where to spawn your text at.
 
-**Example**
+Next, you want to press the MUTATORS button at the top to swap over to a list of mutators. Afterwards, press on any mutator you want. Finally, you'll notice that the mutator ID is spawned where your cursor was.
 
-Eagle Flags(s): {MUTATOR:MIANPOLITICALFLAGS:RANDOMIZE:10} -- This will get 10 random flags from the Political Flags mutator and assign them randomly in your list
+<img src="https://i.imgur.com/LE9Q4Re.png">
 
-Eagle Flags(s): {MUTATOR:MIANPOLITICALFLAGS:ALL} -- This will get ALL flags from the Political Flags Mutator
+Congralutations! You've successfully completed your first command. This will add all the flags from the flag pack to a select team. By the way, you are not restricted to one mutator and can add more mutators into the command if you want. Just make sure they are separated by commas!
+
+This is about it for the command structure. The only last thing you need to know is that you can still ADD flag names after commands or before them if you want, AND you can put commands WITHIN commands. If you want to more on how this works or learn the rest of commands or want more examples, you can see below in "More Information on Commands:" and "Example Configs"
+
+### More Information On Commands:
+```
+COUNT = "COUNT:SOME_LIST",
+When given a list, COUNT will return how many values is in it.
+Example: {COUNT:USA,Germany,Russia} -- Returns three because there are three in the list.
+Example 2: {COUNT:{ALL:MIANPOLITICALFLAGS}} -- Returns the amount of flags within the Political Flags pack.
+
+OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS",
+Returns a number modified by a certain operation and a list of numbers.
+Example: {OPERATOR:ADD:2:5,10,13} -- Returns 30 because the starting number is 2, and the numbers to add onto 2 are 5, 10, and 13. This gives a sum of 30.
+
+ALLMUTATORS = "ALLMUTATORS",
+Returns all the mutator ids
+Example: {ALLMUTATORS} -- Returns every single flag pack in a list. This could be used in the ALL command to retrieve every single flag.
+
+ALL = "ALL:LIST_MUTATOR_IDS",
+Returns all the flags from select mutator(s)
+Example: {ALL:MIANPOLITICALFLAGS} -- Returns all the flags from the Political Flags pack
+
+RANDOMIZE = "RANDOMIZE:LIST_FLAGS:A_NUMBER",
+Gets a random specific number of flag(s) from a given list.
+Example: {RANDOMIZE:USA,Russia,Germany,UK:2} -- This would give me two random flags from the flags I chose: USA, Russia, Germany, UK.
+
+TEAMNAME = "TEAMNAME:LIST_FLAGS:EXAMPLE_NAME",
+Changes the team name for a list of flag(s)
+Example: {TEAMNAME:USA:United States} -- This would change the USA flag's team name to the "United States" in game.
+
+TEAMCOLOR= "TEAMCOLOR:LIST_FLAGS:255,255,255",
+Changes the team color for a list of flag(s)
+Example: {TEAMCOLOR:Russia,Britain:0,0,0} -- This would change the team colors for Russia and Britain to the black color.
+
+FLAGCOLOR= "FLAGCOLOR:LIST_FLAGS:255,255,255"
+Changes the flag color for a list of flag(s)
+Example: {FLAGCOLOR:Britain:255,255,255} -- This would make the United Kingdoms flag extremely white.
+
+More commands may be added in the future! If you want have a command suggestion, reach out and I may add it!
+```
+## Example Configs
+```
+Example 1: RUSSIA,Germany,USA,UK
+This assigns Russia, Germany, USA, and the UK flags.
+
+Example 2: RUSSIA,{TEAMCOLOR:{ALL:{ALLMUTATORS}}:255,0,0}
+This assigns RUSSIA to the team and changes colors of all team colors for every flag to RED.
+
+Example 3: {RANDOMIZE:{ALL:{ALLMUTATORS}}:20}
+This assigns 20 random flags from all installed flag packs.
+
+Example 4: BRAZIL,CANADA,{ALL:MIANPOLITICALFLAGS}
+This assigns Brazil, Canada and then ALL the flags from the Political Flags pack afterwards.
 
 
-### Commands List:
+EXAMPLE 5: {RANDOMIZE:{ALL:MIANPRIDEFLAGS}:{OPERATOR:DIVIDE:{COUNT:{ALL:MIANPRIDEFLAGS}}:2}}
+This randomizes HALF of the flags within the MIANPRIDEFLAGS flag pack.
 
-**MUTATOR** (mutatorid,decision,amount)
+```
+## Some Tips
+Nothing is case-sensitive. Do not worry about capitalization whatsoever.
 
-*mutatorid*: The id of the mutator
+You can add multiple flags and commands to any team as long as they are separated by commas.
 
-*decision*: RANDOMIZE or ALL or FIRST or LAST. RANDOMIZE will randomize an amount of flags from the mutator and assign them to the team. ALL will assign all flags to the team. FIRST will assign an amount of flags from the beginning of the mutator's flag list. LAST is the same but from the ending.
+The order of the output matters! If you want the framework to use a color and name from a specified flag for your team, that FLAG must be typed first in the configuration!
 
-*amount*: If using RANDOMIZE, FIRST, or LAST, this will determine the amount that they use.
+If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
 
-## Using commands and names to add flags
-Like before, all you need to do is use commas to separate names and commands when assigning flags!
-
-**Example**
-
-Eagle Flag(s): USA,Russia,{MUTATOR:MIANPRIDEFLAGS:RANDOMIZE:2} -- This assigns USA and Russia to Eagle first, and then gets two random flags from the Pride Flags mutator.
-
-Eagle Flag(s): {MUTATOR:MIANPRIDEFLAGS:RANDOMIZE:5},GERMANY,UK -- This gets five random flags from the Pride Flags mutator, AND then assigns Germany, and UK afterwards to the team.
-
-Eagle Flag(s): {MUTATOR:MIANPOLTICALFLAGS:RANDOMIZE:2},{MUTATOR:MIANPRIDEFLAGS:ALL} -- This gets two random flags from the Political Flags mutator and then gets all the flags from the Pride Flags mutator.
+There is an option to choose whether EAGLE or RAVEN is assigned first in the CONFIGURATION menu. This likely matters to you if you use commands because of the given tip above. You can also choose if the framework should randomly decide for you if you are crazy like that.
