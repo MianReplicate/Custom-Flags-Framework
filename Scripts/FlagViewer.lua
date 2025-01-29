@@ -101,12 +101,14 @@ function FlagViewer:Awake()
 	}
 	self.creatorEditor = {}
 	self.commands = {
+		COUNT = "COUNT:SOME_LIST",
+		OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS",
 		ALLMUTATORS = "ALLMUTATORS",
-		ALL = "ALL:REPLACE_WITH_MUTATOR_IDS",
-		RANDOMIZE = "RANDOMIZE:REPLACE_WITH_FLAGS:HOW_MANY_TO_RANDOMIZE",
-		TEAMNAME = "TEAMNAME:REPLACE_WITH_FLAGS:EXAMPLE_NAME",
-		TEAMCOLOR= "TEAMCOLOR:REPLACE_WITH_FLAGS:255,255,255",
-		FLAGCOLOR= "FLAGCOLOR:REPLACE_WITH_FLAGS:255,255,255"
+		ALL = "ALL:LIST_MUTATOR_IDS",
+		RANDOMIZE = "RANDOMIZE:LIST_FLAGS:A_NUMBER",
+		TEAMNAME = "TEAMNAME:LIST_FLAGS:EXAMPLE_NAME",
+		TEAMCOLOR= "TEAMCOLOR:LIST_FLAGS:255,255,255",
+		FLAGCOLOR= "FLAGCOLOR:LIST_FLAGS:255,255,255"
 	}
 	self.inputables = {}
 	self.updateCameraTo = {
@@ -151,7 +153,10 @@ function FlagViewer:Start()
 		Backward = self.targets.CreatorBackward.GetComponent(Button),
 		CategoryCounter = self.targets.CreatorCategoryCounter,
 		CommandTemplate = self.targets.CommandTemplate,
-		CommandContent = self.targets.CommandContent
+		CommandContent = self.targets.CommandContent,
+		Flags = self.targets.FlagsButton.GetComponent(Button),
+		Mutators = self.targets.MutatorsButton.GetComponent(Button),
+		onFlags = true
 	}
 	self.MutatorTemplate.SetActive(false)
 	self.FlagTemplate.SetActive(false)
@@ -160,13 +165,15 @@ function FlagViewer:Start()
 	self.flagList = list.createNewList(self.FlagList.transform, self.CategoryCounter.GetComponentInChildren(Text))
 	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(Text))
 
-	self.Search.onValueChanged.AddListener(self, "calculateSearch", self.flagList)
-	self.Creator.Search.onValueChanged.AddListener(self, "calculateSearch", self.creatorList)
+	self.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.flagList, conditionFunction=self.conditionForMainList})
+	self.Creator.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.creatorList, conditionFunction=self.conditionForCreator})
 
 	self.Forward.onClick.AddListener(self, "clickedForward")
 	self.Backward.onClick.AddListener(self, "clickedBackward")
 	self.Creator.Forward.onClick.AddListener(self, "clickedForwardCreator")
 	self.Creator.Backward.onClick.AddListener(self, "clickedBackwardCreator")
+	self.Creator.Flags.onClick.AddListener(self, "clickedFlagButton")
+	self.Creator.Mutators.onClick.AddListener(self, "clickedMutatorButton")
 
 	self.Creator.Output.onEndEdit.AddListener(self, "outputExited")
 
@@ -209,11 +216,11 @@ function FlagViewer:Update()
 
 		for _, mutatorData in pairs(self.framework.MutatorData) do
 			self.mutatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.mutatorList, "clickedMutator"))
-			self.creatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreator", self.Creator.Template))
+			self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreator", self.Creator.Template)
 
 			for _, texData in pairs(mutatorData.textureDatas) do
 				self:createFlagInList(mutatorData.metadata.name, texData, self.flagList, "clickedFlag")
-				self.creatorList:makeObjectViewable(self:createFlagInList(nil, texData, self.creatorList, "clickedFlagCreator", self.Creator.Template))
+				self:createFlagInList(nil, texData, self.creatorList, "clickedFlagCreator", self.Creator.Template)
 			end
 		end
 
@@ -309,9 +316,19 @@ function FlagViewer:clickedMutator()
 	if(not self.selectedFlagMutator or (self.selectedFlagMutator and self.selectedFlagMutator.metadata.name ~= mutatorData.metadata.name)) then
 		self.selectedFlagMutator = mutatorData
 
-		self:calculateSearch(self.Search.text, self.flagList)
+		self:calculateSearch(self.Search.text, self.flagList, self.conditionForMainList)
 		self:updateText()
 	end
+end
+
+function FlagViewer:conditionForMainList(objectData)
+	local metadata = objectData.metadata
+	return type(metadata) ~= "table" or not metadata.mutatorOwner or metadata.mutatorOwner == self.selectedFlagMutator.metadata.name
+end
+
+function FlagViewer:conditionForCreator(objectData)
+	local isFlag = objectData.metadata ~= nil
+	return (not isFlag and not self.Creator.onFlags) or (isFlag and self.Creator.onFlags)
 end
 
 function FlagViewer:clickedForward()
@@ -328,6 +345,16 @@ end
 
 function FlagViewer:clickedBackwardCreator()
 	self.creatorList:changeToCategory(self.creatorList.currentCategory - 1)
+end
+
+function FlagViewer:clickedFlagButton()
+	self.Creator.onFlags = true
+	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
+end
+
+function FlagViewer:clickedMutatorButton()
+	self.Creator.onFlags = false
+	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
 end
 
 function FlagViewer:triggerCommand()
@@ -353,15 +380,15 @@ function FlagViewer:clickedMutatorCreator()
 	end
 end
 
-function FlagViewer:calculateSearch(text, list)
+function FlagViewer:calculateSearch(text, list, conditionFunction)
 	if(not text) then return end
-	list = list or CurrentEvent.listenerData
+	list = list or CurrentEvent.listenerData.list
+	conditionFunction = conditionFunction or (CurrentEvent.listenerData and CurrentEvent.listenerData.conditionFunction)
+
 	list:resetViewables()
 	for _, objectData in pairs(list:getObjects()) do
-		local metadata = objectData.metadata
 		local object = objectData.object
-		local foundOwner = type(metadata) ~= "table" or not metadata.mutatorOwner or metadata.mutatorOwner == self.selectedFlagMutator.metadata.name
-		local canBeActive = foundOwner and string.find(object.GetComponentInChildren(Text).text, text:upper()) ~= nil
+		local canBeActive = (not conditionFunction or conditionFunction(self, objectData)) and string.find(object.GetComponentInChildren(Text).text, text:upper()) ~= nil
 		if(canBeActive) then
 			list:makeObjectViewable(objectData)
 		end
@@ -383,8 +410,18 @@ end
 function FlagViewer:addToOutput(string)
 	local text = self.Creator.Output.text
 	local caretPosition = self.creatorEditor.caretPosition or 0
+	local anchorPos = self.creatorEditor.selectionAnchorPosition
+	local focusPos = self.creatorEditor.selectionFocusPosition
 	if(#text > 0) then
-		if(caretPosition == 1) then
+		if(anchorPos and focusPos and anchorPos ~= focusPos) then
+			local temp = 0
+			if(anchorPos > focusPos) then
+				temp = focusPos
+				focusPos = anchorPos
+				anchorPos = temp
+			end
+			text = text:sub(1, anchorPos)..string..text:sub(focusPos + 1, #text)
+		elseif(caretPosition == 0) then
 			local commaFound = text:sub(1, 1) == ','
 			if(commaFound) then
 				text = string..text
@@ -398,8 +435,8 @@ function FlagViewer:addToOutput(string)
 			else
 				text = text..","..string
 			end
-		elseif(self.creatorEditor.selectionAnchorPosition and self.creatorEditor.selectionFocusPosition) then
-			text = text:sub(1, self.creatorEditor.selectionAnchorPosition - 1)..string..text:sub(self.creatorEditor.selectionFocusPosition, #text)
+		elseif(anchorPos and focusPos) then
+			text = text:sub(1, anchorPos)..string..text:sub(focusPos + 1, #text)
 		end
 	else
 		text = text..string
@@ -408,19 +445,19 @@ function FlagViewer:addToOutput(string)
 end
 
 function FlagViewer:outputExited()
-	self.creatorEditor.caretPosition = self.Creator.Output.caretPosition + 1
-	self.creatorEditor.selectionAnchorPosition = self.Creator.Output.selectionAnchorPosition + 1
-	self.creatorEditor.selectionFocusPosition = self.Creator.Output.selectionFocusPosition + 1
+	self.creatorEditor.caretPosition = self.Creator.Output.caretPosition
+	self.creatorEditor.selectionAnchorPosition = self.Creator.Output.selectionAnchorPosition
+	self.creatorEditor.selectionFocusPosition = self.Creator.Output.selectionFocusPosition
 end
 
 function FlagViewer:wrapCommand(command)
 	return "{"..command.."}"
 end
 
-function FlagViewer:log(...)
-	print("<color=#00ff00>[Flag Viewer]:</color>", ...)
-end
-
 function FlagViewer:updateText()
 	self.UIText.text = "Framework Version: "..self.framework.version.."\nInstalled Flag Mutators: "..self.installedFlagMutators.."\nSelected Flag Mutator: "..self.selectedFlagMutator.metadata.name.."\nSelected Flag: "..self.framework:getTexNameFlair(self.selectedFlag)
+end
+
+function FlagViewer:log(...)
+	print("<color=#00ff00>[Flag Viewer]:</color>", ...)
 end

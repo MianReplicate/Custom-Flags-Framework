@@ -4,10 +4,6 @@
 
 behaviour("MianFlagFramework")
 
-local function splitString(string, separator)
-	return string:gmatch("([^"..separator.."]+)")
-end
-
 local function isCommand(syntax)
 	return syntax:match("{(.*)}")
 end
@@ -82,7 +78,6 @@ local function findArgResults(str)
     return results
 end
 
-
 function MianFlagFramework:Awake()
 	self.version = "2.0.0"
 	self.gameObject.name = "Custom Flag Framework"
@@ -92,12 +87,42 @@ function MianFlagFramework:Awake()
 	self.DefaultWaitTimer = self.script.mutator.GetConfigurationInt("WaitForMutators")
 	self.IgnoreFailedCapturePoint = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
 	self.AlertedUser = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
+	self.AvoidDupeColors = self.script.mutator.GetConfigurationBool("AvoidDupeColors")
+	self.FunnyMode = self.script.mutator.GetConfigurationBool("FunnyMode")
+	self.AvoidDupeFlags = self.script.mutator.GetConfigurationBool("AvoidDupeFlags")
+	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
 
 	-- This shows all the textures for one team
 	self.TeamToTexture = {}
 	self.MutatorData = {}
 
 	self.runnableStringCommands = {
+		COUNT = function(list)
+			local count
+			local exist = list[1]
+			if(not exist) then
+				count = self:getLengthOfDict(list)
+			else
+				count = #list
+			end
+			return {count}
+		end,
+		OPERATOR = function(operator, numToOperate, numbers)
+			operator = operator[1]
+			local finalNum = numToOperate[1]
+			for _, number in ipairs(numbers) do
+				if(operator == "ADD") then
+					finalNum = finalNum + number
+				elseif(operator == "MULTIPLY") then
+					finalNum = finalNum * number
+				elseif(operator == "DIVIDE") then
+					finalNum = finalNum / number
+				end
+			end
+			finalNum = math.ceil(finalNum)
+
+			return {finalNum}
+		end,
 		ALLMUTATORS = function()
 			local names = {}
 			for name, _ in pairs(self.MutatorData) do
@@ -121,14 +146,15 @@ function MianFlagFramework:Awake()
 			return names
 		end,
 		RANDOMIZE = function(flags, amount)
-			if(amount ~= "EXACT") then
-				amount = tonumber(amount[1])
-			else
-				amount = nil
-			end
+			if(amount[1] ~= "EXACT") then
+				local testing = amount[1]
+				amount = tonumber(testing)
 
-			if(not amount) then
-				error("Invalid amount: "..amount)
+				if(not amount) then
+					error("Invalid amount: "..testing)					
+				end
+			else
+				amount = #flags
 			end
 
 			local randomizationPool = {}
@@ -137,10 +163,6 @@ function MianFlagFramework:Awake()
 				if(not unusedFlags or unusedFlags[name]) then
 					table.insert(randomizationPool, name)
 				end
-			end
-
-			if(amount == 'EXACT') then
-				amount = #flags
 			end
 
 			local names = {}
@@ -165,14 +187,14 @@ function MianFlagFramework:Awake()
 			end
 		end,
 		TEAMCOLOR = function(flags, color)
-			local newColor = Color(tonumber(color[1]), tonumber(color[2]), tonumber(color[3]))
+			local newColor = Color(tonumber(color[1])/255, tonumber(color[2])/255, tonumber(color[3])/255)
 			for _, flagName in ipairs(flags) do
 				local texData = self:getTextureData(flagName)
 				texData.teamColor = newColor
 			end
 		end,
 		FLAGCOLOR = function(flags, color)
-			local newColor = Color(tonumber(color[1]), tonumber(color[2]), tonumber(color[3]))
+			local newColor = Color(tonumber(color[1])/255, tonumber(color[2])/255, tonumber(color[3])/255)
 			for _, flagName in ipairs(flags) do
 				local texData = self:getTextureData(flagName)
 				texData.overrideMaterialColor = newColor
@@ -189,6 +211,11 @@ function MianFlagFramework:Awake()
 		[Team.Blue] = "Blue",
 		[Team.Red] = "Red", 
 		[Team.Neutral] = "Neutral"
+	}
+
+	self.OppositeTeam = {
+		[Team.Blue] = Team.Red,
+		[Team.Red] = Team.Blue
 	}
 
 	for team, _ in pairs(self.TeamToName) do
@@ -213,9 +240,7 @@ end
 
 function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	mutator.name = mutatorName
-	mutator.customFlags = mutator.CustomFlags
-	mutator.CustomFlags = nil
-	mutator.customFlagToTeamColors = mutator.CustomFlagTeamColors
+	mutator.CustomFlagToTeamColors = mutator.CustomFlagTeamColors
 	mutator.CustomFlagTeamColors = nil
 	self:addFlagPack(mutator)
 end
@@ -225,10 +250,14 @@ function MianFlagFramework:addFlagPack(mutatorData)
 		error("A flag pack is trying to add flag textures without metadata! Cannot proceed")
 	end
 
+	if(self.FinishedAddingTextures) then
+		error("A flag pack tried to add flag textures outside of registration period. Try increasing the wait time in the framework settings.")
+	end
+
 	local required = {
 		cover = nil,
-		customFlags = nil,
-		customFlagToTeamColors = nil,
+		CustomFlags = nil,
+		CustomFlagToTeamColors = nil,
 		name = function(value)
 			if(value:match("{") or value:match("}") or value:match(":")) then
 				error(value.." is an invalid name! Cannot have {, }, or : in the name!")
@@ -248,11 +277,6 @@ function MianFlagFramework:addFlagPack(mutatorData)
 	end
 	
 	local name = mutatorData.name
-
-	if(self.FinishedAddingTextures) then
-		error(name.." just tried to add flag textures outside of registration period. Try increasing the wait time in the framework settings.")
-	end
-
 	if(self.MutatorData[name]) then
 		self:log("<color=RED>A flag mutator with the name, "..name..", is already known. The developer should really change the name of this mutator but for now, we can use fallback code to register the mutator under a different name. Please tell the developer to change their mutator's name</color>")
 		local dupe = 0
@@ -264,45 +288,57 @@ function MianFlagFramework:addFlagPack(mutatorData)
 		name = tryName
 	end
 
-	self.AddingFlagPack = true
-	local mutatorTable = {
-		metadata = mutatorData,
-		textureDatas = {}
-	}
+	local success, errormsg = pcall(function()
+		self.AddingFlagPack = true
+		local mutatorTable = {
+			metadata = mutatorData,
+			textureDatas = {}
+		}
 
-	for index, texture in pairs(mutatorData.customFlags) do
-		texture.name = texture.name:upper()
-		local nameToUse = texture.name
+		for index, texture in pairs(mutatorData.CustomFlags) do
+			texture.name = texture.name:upper()
+			local nameToUse = texture.name
 
-		local alreadyExists = self:getTextureData(nameToUse)
-		if(alreadyExists) then
-			local repeatCount = 0
-			local testName = nameToUse
-			repeat
-				repeatCount = repeatCount + 1
-				testName = nameToUse.."_"..repeatCount
-			until not self:getTextureData(testName)
-			nameToUse = testName
+			local alreadyExists = self:getTextureData(nameToUse)
+			if(alreadyExists and self.AvoidDupeFlags) then
+				local repeatCount = 0
+				local testName = nameToUse
+				repeat
+					repeatCount = repeatCount + 1
+					testName = nameToUse.."_"..repeatCount
+				until not self:getTextureData(testName)
+				nameToUse = testName
+			end
+			texture.name = nameToUse
+			mutatorTable.textureDatas[nameToUse] = {
+				texture=texture,
+				teamColor=mutatorData.CustomFlagToTeamColors[index],
+				teamName=texture.name,
+				overrideMaterialColor=nil
+			}
 		end
-		texture.name = nameToUse
-		mutatorTable.textureDatas[nameToUse] = {texture=texture,teamColor=mutatorData.customFlagToTeamColors[index],teamName=texture.name,overrideMaterialColor=nil}
+		
+		self.MutatorData[name] = mutatorTable
+	end)
+
+	if(success) then
+		self:log("Added new texture pack: "..name)
+	else
+		self:log("Failed to load texture pack: "..name)
+		self:log("Error: "..errormsg)
 	end
-	
-	self.MutatorData[name] = mutatorTable
 	self.WaitTimer = self.DefaultWaitTimer
 	self.AddingFlagPack = false
-
-	self:log("Added new texture pack: "..name)
 end
 
-function MianFlagFramework:createMaterialFromTexData(team, texData, texture)
+function MianFlagFramework:createMaterialFromTexData(texData, texture)
 	local material = Material(self.TemplateMaterial)
 	if(not texData) then
 		material.SetTexture("_MainTex", texture)
 		material.name = texture.name:upper()
 	else
 		material.SetTexture("_MainTex", texData.texture)
-		material.name = texData.teamName:upper()
+		material.name = texData.texture.name:upper()
 	end
 
 	local yScale = (self.IsCloth.activeSelf and 1.4) or 1
@@ -416,12 +452,22 @@ function MianFlagFramework:Update()
 			self:log("All textures seem to have been added: Starting framework version "..self.version)
 			local TeamToName = self.TeamToName
 			TeamToName[Team.Neutral] = nil
-			local firstTeam = self:getRandomKeyFromDict(TeamToName)
+			local decision = self.ExecuteConfigForTeam
+			local firstTeam
+			if(decision == 0) then
+				firstTeam = Team.Blue
+			elseif(decision == 1) then
+				firstTeam = Team.Red
+			else
+				firstTeam = self:getRandomKeyFromDict(TeamToName)
+			end
 			local secondTeam = (Team.Blue ~= firstTeam and Team.Blue) or (Team.Red ~= firstTeam and Team.Red)
 			TeamToName = {
 				[firstTeam] = self.TeamToName[firstTeam],
 				[secondTeam] = self.TeamToName[secondTeam]
 			}
+
+			local lastTeam = false
 			
 			for team, name in pairs(TeamToName) do
 				local textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
@@ -512,17 +558,29 @@ function MianFlagFramework:Update()
 			
 					if(self.ChangeTeamColorToFlagColor) then
 						local color = firstTexData.teamColor or ColorScheme.GetTeamColor(team)
-						ColorScheme.SetTeamColor(team, Color(color.r, color.g, color.b))
+						if(lastTeam) then
+							local otherTeamColor = ColorScheme.GetTeamColor(self.OppositeTeam[team])
+							if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b and self.AvoidDupeColors) then
+								color.r = math.random(0, 255) / 255
+								color.g = math.random(0, 255) / 255
+								color.b = math.random(0, 255) / 255
+							end
+						end
+						color = Color(color.r, color.g, color.b)
+						local funnyColor = Color(color.r * 255, color.g * 255, color.b * 255)
+						ColorScheme.SetTeamColor(team, (self.FunnyMode and funnyColor) or color)
 						color.a = 0.392
 						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
 					end
 
 					for _, capturePoint in pairs(self.Flags) do
 						if(capturePoint.owner == team) then
-							self:setPointMaterial(capturePoint, self:createMaterialFromTexData(team, firstTexData))
+							self:setPointMaterial(capturePoint, self:createMaterialFromTexData(firstTexData))
 						end
 					end
 				end
+
+				lastTeam = true
 			end
 		end
 	end
@@ -566,7 +624,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		textComponent.text = stringToUse
 	end
 
-	self:setPointMaterial(capturePoint, self:createMaterialFromTexData(ownerToUse, texData, texture))
+	self:setPointMaterial(capturePoint, self:createMaterialFromTexData(texData, texture))
 end
 
 function MianFlagFramework:setPointMaterial(capturePoint, material)
@@ -612,12 +670,12 @@ function MianFlagFramework:getLengthOfDict(dict)
 	return count;
 end
 
-function MianFlagFramework:log(...)
-	print("<color=#fc0fc0>[Custom Flag Framework]:</color>", ...)
-end
-
 function MianFlagFramework:getTexNameFlair(texData)
 	if(not texData) then return "" end
-	local colorToUse = texData.teamColor or Color(255, 255, 255)
+	local colorToUse = texData.teamColor or Color(1, 1, 1)
 	return ColorScheme.RichTextColorTag(Color(colorToUse.r, colorToUse.g, colorToUse.b))..texData.texture.name.."</color>"
+end
+
+function MianFlagFramework:log(...)
+	print("<color=#fc0fc0>[Custom Flag Framework]:</color>", ...)
 end
