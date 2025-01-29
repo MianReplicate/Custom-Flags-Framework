@@ -596,7 +596,11 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	end
 
 	if(length <= 0) then
-		self:log("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)) 
+		self:log("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse]..": Using DEFAULT", ownerToUse, ColorVariant.Bright)) 
+		if(capturePoint.flagRenderer ~= nil) then
+			capturePoint.flagRenderer.material.SetTexture("_MainTex", nil)
+			capturePoint.flagRenderer.material.name = "DEFAULT"
+		end
 		return
 	end
 
