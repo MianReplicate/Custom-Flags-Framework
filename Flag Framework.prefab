@@ -170,7 +170,7 @@ MonoBehaviour:
     overrideName: Mian
     text: Heads up <color=#66ff00><player></color>! Just wanted to let you know from
       the <color=#fc0fc0>Custom Flags Framework</color> that some of the flags within
-      <map> are <color=red>unable</color> to be changed.
+      <color=#0096FF><map></color> are <color=red>unable</color> to be changed.
     portraitGrain: 0
     onSayLine:
       destinations: []
