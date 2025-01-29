@@ -303,7 +303,7 @@ function FlagViewer:clickedFlag()
 	local texData = CurrentEvent.listenerData
 	local color = texData.teamColor or ColorScheme.GetTeamColor(Team.Blue)
 	if(texData ~= self.selectedFlag) then
-		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createMaterialFromTexData(Team.Blue,texData))
+		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createMaterialFromTexData(texData))
 		ColorScheme.setTeamColor(Team.Blue, Color(color.r, color.g, color.b))
 		self.selectedFlag = texData
 
