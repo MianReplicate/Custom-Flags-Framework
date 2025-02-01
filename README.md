@@ -18,6 +18,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - Customize the color of a flag texture.
 - Automatically change a team's name to the name of its specified flag material. If you have multiple flag materials, it will use the first given flag's name with an additional "ALLIES" text.
 - Automatically change a team's color depending on the specified flag material. This is not to be confused with the flag's color. Authors of the mutators set this manually based on what they think best fits the flag. If you want to set colors manually, use "Team Config." If there are multiple flag materials for a team, the first one will be used for the team.
+- Have bots be PRIDEFUL of themselves and show off their BEAUTIFUL flairs with the NEW accessory system! Find a pack [here](https://steamcommunity.com/sharedfiles/filedetails/?id=3418664311)
 
 # Syntax/How to add flags to teams
 - Find more information here on the [SYNTAX INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/SYNTAX-INFO.md)
