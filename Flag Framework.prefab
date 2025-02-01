@@ -63,15 +63,15 @@ MonoBehaviour:
           period.
         orderPriority: 4
       - id: 
-        displayName: Paste or type in your configurations in the two teams below!
-          Preferably you should use the "Flag Viewer" map to create your output,
-          however if you want, you can also type manually.
+        displayName: Paste or type in your configurations in the inputs below! Preferably
+          you should use the "Flag Viewer" map to create your output, however if
+          you want, you can also type manually.
         orderPriority: 0
       integers:
       - id: WaitForMutators
         displayName: Wait Time for Flag Mutators (seconds)
         orderPriority: 5
-        value: 1
+        value: 3
       floats: []
       ranges: []
       strings:
@@ -83,14 +83,22 @@ MonoBehaviour:
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 1
         value: 
+      - id: BlueMeshes
+        displayName: <color=blue>Eagle Accessories</color>
+        orderPriority: 2
+        value: 
+      - id: RedMeshes
+        displayName: <color=red>Raven Accessories</color>
+        orderPriority: 2
+        value: 
       bools:
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
-        orderPriority: 3
+        orderPriority: 4
         value: 0
       - id: ChangeTeamColorToFlagColor
         displayName: Change Team Color from Flag
-        orderPriority: 3
+        orderPriority: 4
         value: 0
       - id: IgnoreFailedCapturePoint
         displayName: Ignore Non-Changeable Capture Points
@@ -104,8 +112,8 @@ MonoBehaviour:
         displayName: funny mode (dont enable this seriously you will kill your eyes)
         orderPriority: 9
         value: 0
-      - id: AvoidDupeFlags
-        displayName: Auto Rename Dupe Flag Names
+      - id: AvoidDupeData
+        displayName: Auto Rename Dupe Data
         orderPriority: 8
         value: 1
       dropdowns:

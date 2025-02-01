@@ -1,20 +1,25 @@
-# How to add flags to teams
+# Terminology (IMPORTANT)
+When I say "data", I am talking about both FLAGS and MESHES/ACCESSORIES.
+
+# How to Add Datas to Teams
 
 To set up your configuration, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
 
-## Assigning by Flag Name
-Search for the flag you want and click it. This will add it to your output to the top. Once you've finished configuring, copy your output. Then leave the game, go to the CONFIGURATION menu for the framework mutator, and paste your output into either "Eagle Flag(s)" or "Raven Flag(s)".
+## Assigning by Name
+Search for the data you want and click it. This will add it to your output to the top. Once you've finished configuring, copy your output. Then leave the game, go to the CONFIGURATION menu for the framework mutator, and paste your output into either Eagle or Raven. Meshes go in accessory outputs and flags go in flag outputs.
 
-Keep in mind that you can add MULTIPLE flags to a team. For instance, if you capture a flag and the team has multiple flags, a random one will be chosen for the capture point.
+Keep in mind that you can add MULTIPLE flags to a team. Bots are randomly assigned flags to them upon spawning in. The capture points they capture will have its flag texture changed to whatever the bot's assigned flag is.
+
+You can also assign MULTIPLE meshes to a bot. However, bot meshes are only assigned ONCE when the game starts. They are not changed upon bot respawned. This is due to how Ravenfield handles accessories.
 
 <img src="https://i.imgur.com/czXAVYu.png"> 
 
-This would assign Belgium and Brazil to the team with this config.
+This assigns Belgium and Brazil to the team with this config.
 
 ## Assigning by Commands (OPTIONAL, ADVANCED)
 **WARNING: This sort of configuration is advanced and you might get lost. This is not required to learn. However it CAN be super useful if you are a person looking to create some interesting configurations.**
 
-So what are commands all about? Well, to begin with, they can let you RANDOMIZE the flags that you have for a team. They also let you override the team colors/names set up for a flag material. You could also use them to grab every single flag from a flag pack that you have! Yes, that means you would NOT have to add every single flag manually from a flag pack separated by commas IF you wanted every single flag.
+So what are commands all about? Well, to begin with, they can let you RANDOMIZE the datas that you have for a team. They also let you override the team colors/names set up for a flag material. You could also use them to grab every single data from a pack that you have! Yes, that means you would NOT have to add every single data manually from a pack separated by commas IF you wanted every single data.
 
 If the above has enticed you, then you are in the right spot! If not, you can back away from this configuration method. Otherwise, carry on.
 
@@ -30,42 +35,49 @@ Next, you want to press the MUTATORS button at the top to swap over to a list of
 
 Congralutations! You've successfully completed your first command. This will add all the flags from the flag pack to a select team. By the way, you are not restricted to one mutator and can add more mutators into the command if you want. Just make sure they are separated by commas!
 
-This is about it for the command structure. The only last thing you need to know is that you can still ADD flag names after commands or before them if you want, AND you can put commands WITHIN commands. If you want to more on how this works or learn the rest of commands or want more examples, you can see below in "More Information on Commands:" and "Example Configs"
+This is about it for the command structure. The only last thing you need to know is that you can still ADD data names after commands or before them if you want, AND you can put commands WITHIN commands. If you want to more on how this works or learn the rest of commands or want more examples, you can see below in "More Information on Commands:" and "Example Configs"
 
 ### More Information On Commands:
 ```
-COUNT = "COUNT:SOME_LIST",
+LIST = "LIST:ADD_OR_GET:ADD_NAMES_HERE"
+Can be used to add or get a user-defined list filled with names
+Example: {LIST:ADD:Super Powers:Russia,UK,US} -- Adds a user-defined list named "Super Powers" which includes Russia, UK, and the US
+Example 2: {LIST:GET:Super Powers} -- Returns the list "Super Powers" which consists of Russia, UK, and the US
+
+COUNT = "COUNT:SOME_LIST"
 When given a list, COUNT will return how many values is in it.
 Example: {COUNT:USA,Germany,Russia} -- Returns three because there are three in the list.
 Example 2: {COUNT:{ALL:MIANPOLITICALFLAGS}} -- Returns the amount of flags within the Political Flags pack.
+Example 3: {COUNT:{LIST:GET:Super Powers}} -- Returns three flags which are Russia, UK and the US because they are part of the "Super Powers" list
 
-OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS",
+OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS"
 Returns a number modified by a certain operation and a list of numbers.
 Example: {OPERATOR:ADD:2:5,10,13} -- Returns 30 because the starting number is 2, and the numbers to add onto 2 are 5, 10, and 13. This gives a sum of 30.
 
-ALLMUTATORS = "ALLMUTATORS",
+ALLMUTATORS = "ALLMUTATORS"
 Returns all the mutator ids
-Example: {ALLMUTATORS} -- Returns every single flag pack in a list. This could be used in the ALL command to retrieve every single flag.
+Example: {ALLMUTATORS} -- Returns every single flag or mesh pack in a list. This could be used in the ALL command to retrieve every single flag or mesh.
 
-ALL = "ALL:LIST_MUTATOR_IDS",
+ALL = "ALL:LIST_MUTATOR_IDS"
 Returns all the flags from select mutator(s)
 Example: {ALL:MIANPOLITICALFLAGS} -- Returns all the flags from the Political Flags pack
 
-RANDOMIZE = "RANDOMIZE:LIST_FLAGS:A_NUMBER",
-Gets a random specific number of flag(s) from a given list.
-Example: {RANDOMIZE:USA,Russia,Germany,UK:2} -- This would give me two random flags from the flags I chose: USA, Russia, Germany, UK.
+RANDOMIZE = "RANDOMIZE:LIST_DATAS:A_NUMBER"
+Gets a random specific number of data(s) from a given list.
+Example: {RANDOMIZE:USA,Russia,Germany,UK:2} -- This would give me two random datas from the datas I chose: USA, Russia, Germany, UK.
 
+-- The below are commands ONLY for flags.
 TEAMNAME = "TEAMNAME:LIST_FLAGS:EXAMPLE_NAME",
 Changes the team name for a list of flag(s)
-Example: {TEAMNAME:USA:United States} -- This would change the USA flag's team name to the "United States" in game.
+Example: {TEAMNAME:USA:United States} -- This would change the USA flag's team name to the "United States" in game. Keep in mind, this DOES not add the flags to the team. This only changes its team name. If you want to add the flag, you need to add its name into the output as usual.
 
 TEAMCOLOR= "TEAMCOLOR:LIST_FLAGS:255,255,255",
 Changes the team color for a list of flag(s)
-Example: {TEAMCOLOR:Russia,Britain:0,0,0} -- This would change the team colors for Russia and Britain to the black color.
+Example: {TEAMCOLOR:Russia,Britain:0,0,0} -- This would change the team colors for Russia and Britain to the black color. Keep in mind, this DOES not add the flags to the team. This only changes its team color. If you want to add the flag, you need to add its name into the output as usual.
 
 FLAGCOLOR= "FLAGCOLOR:LIST_FLAGS:255,255,255"
 Changes the flag color for a list of flag(s)
-Example: {FLAGCOLOR:Britain:255,255,255} -- This would make the United Kingdoms flag extremely white.
+Example: {FLAGCOLOR:Britain:255,255,255} -- This would make the United Kingdoms flag extremely white. Keep in mind, this DOES not add the flags to the team. This only changes its flag color. If you want to add the flag, you need to add its name into the output as usual.
 
 More commands may be added in the future! If you want have a command suggestion, reach out and I may add it!
 ```
@@ -87,14 +99,17 @@ This assigns Brazil, Canada and then ALL the flags from the Political Flags pack
 EXAMPLE 5: {RANDOMIZE:{ALL:MIANPRIDEFLAGS}:{OPERATOR:DIVIDE:{COUNT:{ALL:MIANPRIDEFLAGS}}:2}}
 This randomizes HALF of the flags within the MIANPRIDEFLAGS flag pack.
 
+EXAMPLE 6: Vest,Side Helmet
+This assigns the Vest and Side Helmet meshes from the Flag Accessories mesh pack.
+
 ```
 ## Some Tips
 Nothing is case-sensitive. Do not worry about capitalization whatsoever.
 
-You can add multiple flags and commands to any team as long as they are separated by commas.
+You can add multiple datas and commands to any team as long as they are separated by commas.
 
 The order of the output matters! If you want the framework to use a color and name from a specified flag for your team, that FLAG must be typed first in the configuration!
 
-If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
+**THE FOLLOWING PARAGRAPH DOES NOT APPLY FOR MESHES:** If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
 
-There is an option to choose whether EAGLE or RAVEN is assigned first in the CONFIGURATION menu. This likely matters to you if you use commands because of the given tip above. You can also choose if the framework should randomly decide for you if you are crazy like that.
+There is an option to choose whether EAGLE or RAVEN is assigned first in the CONFIGURATION menu. This likely matters to you if you use commands because of the given tip above (this doesn't matter for meshes). You can also choose if the framework should randomly decide for you if you are crazy like that.

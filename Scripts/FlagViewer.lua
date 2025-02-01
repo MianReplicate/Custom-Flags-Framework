@@ -101,6 +101,7 @@ function FlagViewer:Awake()
 	}
 	self.creatorEditor = {}
 	self.commands = {
+		LIST = "LIST:ADD_OR_GET:ADD_NAMES_HERE",
 		COUNT = "COUNT:SOME_LIST",
 		OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS",
 		ALLMUTATORS = "ALLMUTATORS",
@@ -212,13 +213,13 @@ function FlagViewer:Update()
 		self.frameworkChecked = true
 		Screen.UnlockCursor()
 
-		self.installedFlagMutators = self.framework:getLengthOfDict(self.framework.MutatorData)
+		self.installedFlagMutators = self.framework:getLengthOfDict(self.framework.FlagData)
 
-		for _, mutatorData in pairs(self.framework.MutatorData) do
+		for _, mutatorData in pairs(self.framework.FlagData) do
 			self.mutatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.mutatorList, "clickedMutator"))
 			self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreator", self.Creator.Template)
 
-			for _, texData in pairs(mutatorData.textureDatas) do
+			for _, texData in pairs(mutatorData.datas) do
 				self:createFlagInList(mutatorData.metadata.name, texData, self.flagList, "clickedFlag")
 				self:createFlagInList(nil, texData, self.creatorList, "clickedFlagCreator", self.Creator.Template)
 			end
