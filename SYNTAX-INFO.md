@@ -1,16 +1,19 @@
 # Terminology (IMPORTANT)
-When I say "data", I am talking about both FLAGS and MESHES/ACCESSORIES.
+1. Meshes ARE accessories. If I mention meshes, I really mean accessories.
+2. When I say "data", I am talking about both FLAGS and MESHES/ACCESSORIES.
 
-# How to Add Datas to Teams
+# How to Add Flags/Meshes to Teams
 
-To set up your configuration, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
+If you are adding flags, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
+
+If you are adding meshes, please learn how to add flags already if you haven't. This will be important because you will have to learn how to use commands to add meshes in this next part. If you are too lazy to learn, read the paragraph below this. Otherwise start up the "Flag Viewer" map and find your meshes. Then follow "Assigning by Commands" and learn the command syntax. Afterwards, read up on the "ACCESSORY" command in "More Information on Commands". You will be using this command within the "ACCESSORY" output to assign accessories to flags.
+
+If you are too lazy to learn how to assign meshes properly, copy the following line WITHOUT the quotation marks in your ACCESSORIES output. This will make it so all your accessories are assigned to every flag you have installed in the game. "{ACCESSORY:{ALL:{ALLMUTATORS:FLAGS}}:{ALL:{ALLMUTATORS:MESHES}}}"
 
 ## Assigning by Name
 Search for the data you want and click it. This will add it to your output to the top. Once you've finished configuring, copy your output. Then leave the game, go to the CONFIGURATION menu for the framework mutator, and paste your output into either Eagle or Raven. Meshes go in accessory outputs and flags go in flag outputs.
 
 Keep in mind that you can add MULTIPLE flags to a team. Bots are randomly assigned flags to them upon spawning in. The capture points they capture will have its flag texture changed to whatever the bot's assigned flag is.
-
-You can also assign MULTIPLE meshes to a bot. However, bot meshes are only assigned ONCE when the game starts. They are not changed upon bot respawned. This is due to how Ravenfield handles accessories.
 
 <img src="https://i.imgur.com/czXAVYu.png"> 
 
@@ -54,35 +57,49 @@ OPERATOR = "OPERATOR:OPERATION_TO_USE:A_NUMBER_TO_START:NUMBERS"
 Returns a number modified by a certain operation and a list of numbers.
 Example: {OPERATOR:ADD:2:5,10,13} -- Returns 30 because the starting number is 2, and the numbers to add onto 2 are 5, 10, and 13. This gives a sum of 30.
 
-ALLMUTATORS = "ALLMUTATORS"
+ALLMUTATORS = "ALLMUTATORS:FLAGS_OR_MESHES"
 Returns all the mutator ids
-Example: {ALLMUTATORS} -- Returns every single flag or mesh pack in a list. This could be used in the ALL command to retrieve every single flag or mesh.
+Example: {ALLMUTATORS:FLAGS} -- Returns every single flag pack in a list. This could be used in the ALL command to retrieve every single flag from the given packs.
+Example: {ALLMUTATORS:MESHES} -- Returns every single mesh pack in a list. This can be used in the ALL command to retrieve every single mesh from the given packs.
 
-ALL = "ALL:LIST_MUTATOR_IDS"
+ALL = "ALL:MUTATOR_IDS"
 Returns all the flags from select mutator(s)
 Example: {ALL:MIANPOLITICALFLAGS} -- Returns all the flags from the Political Flags pack
 
-RANDOMIZE = "RANDOMIZE:LIST_DATAS:A_NUMBER"
+RANDOMIZE = "RANDOMIZE:DATAS:A_NUMBER"
 Gets a random specific number of data(s) from a given list.
 Example: {RANDOMIZE:USA,Russia,Germany,UK:2} -- This would give me two random datas from the datas I chose: USA, Russia, Germany, UK.
 
--- The below are commands ONLY for flags.
-TEAMNAME = "TEAMNAME:LIST_FLAGS:EXAMPLE_NAME",
+PLAYER = "PLAYER:FLAGS_OR_MESHES:ADD_NAMES_HERE"
+If you wanna be special, you can assign flags/accessories to yourself here. This is a separate list that is unique to you. Thus you will only get flags/accessories from this list and nobody else. If you wanted to be the only British person on your team, you could do that. (sorta)
+Example: {PLAYER:FLAGS:USA} -- Assigns the USA flag to the player actor
+Example 2: {PLAYER:MESHES:Vest,Front Helmet} -- Assigns the vest and front helmet accessories to the player actor
+Example 3: {PLAYER:FLAGS:Russia,Germany} -- Assigns the Russia and Germany flag to the player actor 
+
+-- The below are commands ONLY for the accessories/meshes output
+ACCESSORY = "ACCESSORY:FLAGS:MESHES"
+Assigns accessories to a list of flag(s). This is required if you want to set up accessories in your game.
+Example: {ACCESSORY:USA,Germany:Side Helmet,Front and Back} -- Assigns the Side Helmet and Front and Back accessories to the USA and Germany flag. Any actors that spawn with these flags assigned WILL be given these meshes.
+
+-- The below are commands ONLY for the flag outputs.
+TEAMNAME = "TEAMNAME:FLAGS:EXAMPLE_NAME",
 Changes the team name for a list of flag(s)
 Example: {TEAMNAME:USA:United States} -- This would change the USA flag's team name to the "United States" in game. Keep in mind, this DOES not add the flags to the team. This only changes its team name. If you want to add the flag, you need to add its name into the output as usual.
 
-TEAMCOLOR= "TEAMCOLOR:LIST_FLAGS:255,255,255",
+TEAMCOLOR = "TEAMCOLOR:FLAGS:255,255,255",
 Changes the team color for a list of flag(s)
 Example: {TEAMCOLOR:Russia,Britain:0,0,0} -- This would change the team colors for Russia and Britain to the black color. Keep in mind, this DOES not add the flags to the team. This only changes its team color. If you want to add the flag, you need to add its name into the output as usual.
 
-FLAGCOLOR= "FLAGCOLOR:LIST_FLAGS:255,255,255"
+FLAGCOLOR = "FLAGCOLOR:FLAGS:255,255,255"
 Changes the flag color for a list of flag(s)
 Example: {FLAGCOLOR:Britain:255,255,255} -- This would make the United Kingdoms flag extremely white. Keep in mind, this DOES not add the flags to the team. This only changes its flag color. If you want to add the flag, you need to add its name into the output as usual.
+
 
 More commands may be added in the future! If you want have a command suggestion, reach out and I may add it!
 ```
 ## Example Configs
 ```
+-- In the FLAGS output
 Example 1: RUSSIA,Germany,USA,UK
 This assigns Russia, Germany, USA, and the UK flags.
 
@@ -95,12 +112,15 @@ This assigns 20 random flags from all installed flag packs.
 Example 4: BRAZIL,CANADA,{ALL:MIANPOLITICALFLAGS}
 This assigns Brazil, Canada and then ALL the flags from the Political Flags pack afterwards.
 
-
 EXAMPLE 5: {RANDOMIZE:{ALL:MIANPRIDEFLAGS}:{OPERATOR:DIVIDE:{COUNT:{ALL:MIANPRIDEFLAGS}}:2}}
 This randomizes HALF of the flags within the MIANPRIDEFLAGS flag pack.
 
-EXAMPLE 6: Vest,Side Helmet
-This assigns the Vest and Side Helmet meshes from the Flag Accessories mesh pack.
+-- In the ACCESSORIES output
+EXAMPLE 6: {ACCESSORY:{ALL:{ALLMUTATORS:FLAGS}}:{ALL:{ALLMUTATORS:MESHES}}}
+This assigns ALL accessories you have installed to ALL flags you have installed
+
+EXAMPLE 7: {ACCESSORY:{ALL:{ALLMUTATORS:FLAGS}}:{RANDOMIZE:{ALL:{ALLMUTATORS:MESHES}}:10}}
+This assigns 10 RANDOM ACCESSORIES out of ALL accessories you have installed to ALL flags you have installed
 
 ```
 ## Some Tips
@@ -110,6 +130,9 @@ You can add multiple datas and commands to any team as long as they are separate
 
 The order of the output matters! If you want the framework to use a color and name from a specified flag for your team, that FLAG must be typed first in the configuration!
 
-**THE FOLLOWING PARAGRAPH DOES NOT APPLY FOR MESHES:** If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
+ACCESSORIES can only be added in the ACCESSORIES output
+FLAGS can only be added in the FLAG outputs
+
+**THE FOLLOWING PARAGRAPHS DO NOT APPLY FOR MESHES:** If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
 
 There is an option to choose whether EAGLE or RAVEN is assigned first in the CONFIGURATION menu. This likely matters to you if you use commands because of the given tip above (this doesn't matter for meshes). You can also choose if the framework should randomly decide for you if you are crazy like that.

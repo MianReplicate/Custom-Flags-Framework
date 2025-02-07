@@ -93,13 +93,13 @@ function MianFlagFramework:Awake()
 	self.FunnyMode = self.script.mutator.GetConfigurationBool("FunnyMode")
 	self.AvoidDupeData = self.script.mutator.GetConfigurationBool("AvoidDupeData")
 	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
+	self.AssignedMeshes = self.script.mutator.GetConfigurationString("Meshes")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
-	self.FlagMeshMaterial = self.targets.FlagMeshMaterial
-	self.FlagMesh = self.targets.FlagMesh
 	self.WaitTimer = self.DefaultWaitTimer
 	self.FinishedAddingPacks = false
 	self.OverlayLabel = GameObject.Find("Ingame UI Container(Clone)/New Ingame UI/Overlay Label Element/Overlay Label")
+	self.VictoryText = GameObject.Find("Ingame UI Container(Clone)/Victory UI Canvas/Victory Panel/Victory Focus/Victory Text")
 
 	-- This shows all the textures for one team
 	self.TeamToName = {
@@ -114,8 +114,8 @@ function MianFlagFramework:Awake()
 	}
 
 	self.TeamToData = {}
-	self.FlagPacks = {}
-	self.MeshPacks = {}
+	-- Mutator -> metadata, meshes, flags
+	self.MutatorPacks = {}
 	self.CachedTextureToMaterials = {}
 
 	-- Actors are assigned datas
@@ -126,16 +126,54 @@ function MianFlagFramework:Awake()
 
 	self.TextureForSpawn = {}
 	self.UserLists = {}
+	self.FlagToMeshes = {}
+	self.PlayerData = {}
 
 	for team, _ in pairs(self.OppositeTeam) do
 		self.TeamToActors[team] = {}
 	end
 
 	self.commandContext = {
-		list = nil,
+		type = nil,
 		allowDupes = false
 	}
 	self.runnableStringCommands = {
+		ACCESSORY = function(flags, meshes)
+			if(self.commandContext.type ~= "meshes") then return end
+
+			local meshTable = {}
+			for _, mesh in ipairs(meshes) do
+				mesh = mesh:upper()
+				local data = self:getData("meshes", mesh)
+				if(data) then
+					table.insert(meshTable, data)
+				else
+					self:log(mesh.." is not a valid accessory!")
+				end
+			end
+
+			for _, flag in ipairs(flags) do
+				self.FlagToMeshes[flag:upper()] = meshTable
+			end
+		end,
+		PLAYER = function(operation, list)
+			local operator = operation[1]
+			if(operator == "FLAGS") then
+				for _, name in ipairs(list) do
+					local data = self:getData("flags", name)
+					if(data) then
+						self.PlayerData[name] = data			
+					end
+				end
+			elseif(operator == "MESHES") then
+				for _, name in ipairs(list) do
+					local data = self:getData("meshes", name)
+					if(data) then
+						self.PlayerData[name] = data			
+					end
+				end
+			end
+		end,
 		LIST = function(operation, name, list)
 			local operator = operation[1]
 			name = name[1]
@@ -175,18 +213,20 @@ function MianFlagFramework:Awake()
 
 			return {finalNum}
 		end,
-		ALLMUTATORS = function()
+		ALLMUTATORS = function(type)
+			type = type[1]:lower() -- either "FLAGS" or "MESHES"
 			local names = {}
-			for name, _ in pairs(self.commandContext.list) do
+			for name, _ in pairs(self:retrieveMutatorsWithType(type)) do
 				table.insert(names, name)
 			end
 			return names
 		end,
 		ALL = function(mutatorIds)
 			local names = {}
-			local unusedDatas = self:getAllNonUsedDatas(self.commandContext.list)
+			local type = self.commandContext.useTypes and self.commandContext.type
+			local unusedDatas = self:getAllNonUsedDatas(type)
 			for _, mutatorId in ipairs(mutatorIds) do
-				local success, datas = pcall(self.getDatasFromMutator, self, self.commandContext.list, mutatorId)
+				local success, datas = pcall(self.getDatasFromMutator, self, type, mutatorId)
 				if(success and datas) then
 					for name, _ in pairs(datas) do
 						if(not unusedDatas or unusedDatas[name] or self.commandContext.allowDupes) then
@@ -202,11 +242,11 @@ function MianFlagFramework:Awake()
 			amount = tonumber(testing)
 
 			if(not amount) then
-				error("Invalid amount: "..testing)					
+				error("Invalid amount: "..testing)
 			end
 
 			local randomizationPool = {}
-			local unusedDatas = self:getAllNonUsedDatas(self.commandContext.list)
+			local unusedDatas = self:getAllNonUsedDatas(self.commandContext.useTypes and self.commandContext.type)
 			for _, name in ipairs(datas) do
 				if(not unusedDatas or unusedDatas[name] or self.commandContext.allowDupes) then
 					table.insert(randomizationPool, name)
@@ -228,29 +268,29 @@ function MianFlagFramework:Awake()
 			return names
 		end,
 		TEAMNAME = function(flags, name)
-			if(self.commandContext.list ~= self.FlagPacks) then return nil end
+			if(self.commandContext.type ~= "flags") then return nil end
 
 			name = name[1]
 			for _, flagName in ipairs(flags) do
-				local texData = self:getData(self.FlagPacks, flagName)
+				local texData = self:getData("flags", flagName)
 				texData.teamName = name
 			end
 		end,
 		TEAMCOLOR = function(flags, color)
-			if(self.commandContext.list ~= self.FlagPacks) then return nil end
+			if(self.commandContext.list ~= "flags") then return nil end
 
 			local newColor = Color(tonumber(color[1])/255, tonumber(color[2])/255, tonumber(color[3])/255)
 			for _, flagName in ipairs(flags) do
-				local texData = self:getData(self.FlagPacks, flagName)
+				local texData = self:getData("flags", flagName)
 				texData.teamColor = newColor
 			end
 		end,
 		FLAGCOLOR = function(flags, color)
-			if(self.commandContext.list ~= self.FlagPacks) then return nil end
+			if(self.commandContext.list ~= "flags") then return nil end
 
 			local newColor = Color(tonumber(color[1])/255, tonumber(color[2])/255, tonumber(color[3])/255)
 			for _, flagName in ipairs(flags) do
-				local texData = self:getData(self.FlagPacks, flagName)
+				local texData = self:getData("flags", flagName)
 				texData.overrideMaterialColor = newColor
 			end
 		end
@@ -276,6 +316,7 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointCaptured.AddListener(self,"autoSetPointMaterial")
 	GameEvents.onCapturePointNeutralized.AddListener(self,"autoSetPointMaterial")
 	GameEvents.onActorSpawn.AddListener(self, "onActorSpawn")
+	GameEvents.onMatchEnd.AddListener(self, "onMatchEnd")
 end
 -- The two functions below are to handle compatiblity with old mutator packs
 function MianFlagFramework:addTextureData()
@@ -289,7 +330,7 @@ function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	self:addFlagPack(mutator)
 end
 
-function MianFlagFramework:validatePack(list, mutatorData, validateTable)
+function MianFlagFramework:validatePack(mutatorData, validateTable)
 	if(not mutatorData) then
 		error("A pack is trying to add data without metadata! Cannot proceed")
 	end
@@ -308,14 +349,14 @@ function MianFlagFramework:validatePack(list, mutatorData, validateTable)
 	end
 
 	local name = mutatorData.name
-	if(list[name]) then
+	if(self.MutatorPacks[name]) then
 		self:log("<color=RED>A pack with the name, "..name..", is already known. The developer should really change the name of this pack but for now, we can use fallback code to register the pack under a different name. Please tell the developer to change their pack's name</color>")
 		local dupe = 0
 		local tryName
 		repeat
 			dupe = dupe + 1
 			tryName = name.."_"..dupe
-		until not list[tryName]
+		until not self.MutatorPacks[tryName]
 		mutatorData.name = tryName
 	end
 
@@ -323,7 +364,7 @@ function MianFlagFramework:validatePack(list, mutatorData, validateTable)
 end
 
 function MianFlagFramework:addMeshPack(mutatorData)
-	local canRun = self:validatePack(self.MeshPacks, mutatorData, {
+	local canRun = self:validatePack(mutatorData, {
 		cover = nil,
 		CustomMeshes = nil,
 		name = function(value)
@@ -338,15 +379,19 @@ function MianFlagFramework:addMeshPack(mutatorData)
 	local name = mutatorData.name
 
 	local success, errormsg = pcall(function()
-		local mutatorTable = {
-			metadata = mutatorData,
-			datas = {}
+		local mutatorTable = self.MutatorPacks[name] or {
+			metadata = mutatorData
 		}
+		mutatorTable.meshes = {}
 
-		for _, mesh in pairs(mutatorData.CustomMeshes) do
-			mesh.name = mesh.name:upper()
+		for _, meshData in pairs(mutatorData.CustomMeshes) do
+			local mesh = meshData.mesh
+			local materials = meshData.materials
+			local name = mesh.name:upper()
+			mesh.name = name
+			
 			local nameToUse = mesh.name
-			local alreadyExists = self:getData(self.MeshPacks, nameToUse)
+			local alreadyExists = self:getData(nameToUse)
 
 			if(alreadyExists and self.AvoidDupeData) then
 				local repeatCount = 0
@@ -354,30 +399,31 @@ function MianFlagFramework:addMeshPack(mutatorData)
 				repeat
 					repeatCount = repeatCount + 1
 					testName = nameToUse.."_"..repeatCount
-				until not self:getData(self.MeshPacks, testName)
+				until not self:getData(testName)
 				nameToUse = testName
 			end
 			mesh.name = nameToUse
-			mutatorTable.datas[nameToUse] = {
+			mutatorTable.meshes[nameToUse] = {
 				mesh=mesh,
-				name = nameToUse
+				name = nameToUse,
+				materials = materials
 			}
 		end
 		
-		self.MeshPacks[name] = mutatorTable
+		self.MutatorPacks[name] = mutatorTable
 	end)
 
 	if(success) then
 		self:log("Added new pack: "..name)
 	else
 		self:log("Failed to load pack: "..name)
-		self:log("Error: "..errormsg)
+		self:log("<color=red>Error: "..errormsg.."</color>")
 	end
 	self.WaitTimer = self.DefaultWaitTimer
 end
 
 function MianFlagFramework:addFlagPack(mutatorData)
-	local canRun = self:validatePack(self.FlagPacks, mutatorData, {
+	local canRun = self:validatePack(mutatorData, {
 		cover = nil,
 		CustomFlags = nil,
 		CustomFlagToTeamColors = nil,
@@ -393,15 +439,15 @@ function MianFlagFramework:addFlagPack(mutatorData)
 	local name = mutatorData.name
 
 	local success, errormsg = pcall(function()
-		local mutatorTable = {
-			metadata = mutatorData,
-			datas = {}
+		local mutatorTable = self.MutatorPacks[name] or {
+			metadata = mutatorData
 		}
+		mutatorTable.flags = {}
 
 		for index, texture in pairs(mutatorData.CustomFlags) do
 			texture.name = texture.name:upper()
 			local nameToUse = texture.name
-			local alreadyExists = self:getData(self.FlagPacks, nameToUse)
+			local alreadyExists = self:getData(nameToUse)
 
 			if(alreadyExists and self.AvoidDupeData) then
 				local repeatCount = 0
@@ -409,11 +455,11 @@ function MianFlagFramework:addFlagPack(mutatorData)
 				repeat
 					repeatCount = repeatCount + 1
 					testName = nameToUse.."_"..repeatCount
-				until not self:getData(self.FlagPacks, testName)
+				until not self:getData(testName)
 				nameToUse = testName
 			end
 			texture.name = nameToUse
-			mutatorTable.datas[nameToUse] = {
+			mutatorTable.flags[nameToUse] = {
 				texture=texture,
 				name = nameToUse,
 				teamColor=mutatorData.CustomFlagToTeamColors[index],
@@ -422,7 +468,7 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			}
 		end
 		
-		self.FlagPacks[name] = mutatorTable
+		self.MutatorPacks[name] = mutatorTable
 	end)
 
 	if(success) then
@@ -434,11 +480,14 @@ function MianFlagFramework:addFlagPack(mutatorData)
 	self.WaitTimer = self.DefaultWaitTimer
 end
 
-function MianFlagFramework:createOrGetExistingMaterialFromTexture(texture, overrideColor, overrideScale, overrideMaterial)
+function MianFlagFramework:createOrGetExistingMaterialFromTexture(list, texture, overrideColor, overrideScale, overrideMaterial)
 	local material = self.CachedTextureToMaterials[texture.name] or Material(overrideMaterial or self.TemplateMaterial)
 	self:updateMaterialFromTexture(material, texture, overrideColor, overrideScale)
 
-	self.CachedTextureToMaterials[texture.name] = material
+	if(not self.CachedTextureToMaterials[list]) then
+		self.CachedTextureToMaterials[list] = {}
+	end
+	self.CachedTextureToMaterials[list][texture.name] = material
 	return material
 end
 
@@ -454,49 +503,8 @@ function MianFlagFramework:updateMaterialFromTexture(material, texture, override
 	end
 end
 
-function MianFlagFramework:getMutatorMetadata(list, name)
-	local mutatorData = list[string.upper(name)]
-	if(not mutatorData) then
-		error(name:upper().." is not a valid mutator!")
-	end
-	return mutatorData.metadata
-end
-
-function MianFlagFramework:getDatasFromMutator(list, name)
-	local mutatorData = list[string.upper(name)]
-	if(not mutatorData) then
-		error(name:upper().." is not a valid mutator!")
-	end
-	return mutatorData.datas
-end
-
-function MianFlagFramework:getData(list, name)
-	for _, mutatorData in pairs(list) do
-		local texData = mutatorData.datas[string.upper(name)]
-		if(texData) then
-			return texData
-		end
-	end
-
-	return nil
-end
-
-function MianFlagFramework:getAllDatas(waitForFinish, list)
-	if(waitForFinish) then return nil end
-
-	local dataList = {}
-
-	for _, mutatorData in pairs(list) do
-		for name, data in pairs(mutatorData.datas) do
-			dataList[name] = data
-		end
-	end
-
-	return dataList
-end
-
-function MianFlagFramework:getAllNonUsedDatas(list)
-	local givenDatas = self:getAllDatas(nil, list)
+function MianFlagFramework:getAllNonUsedDatas(type)
+	local givenDatas = self:getDatas(type)
 	for _, datas in pairs(self.TeamToData) do
 		for name, _ in pairs(datas) do
 			if(givenDatas[name]) then
@@ -552,89 +560,91 @@ function MianFlagFramework:Update()
 
 			local lastTeam = false
 			
+			local function executeCommandFromSyntax(syntax)
+				syntax = syntax:upper()
+				local _, endIndex, command = syntax:find("([^:]+)")
+				local argStrings = syntax:sub(endIndex+2)
+
+				local commandFunction = self.runnableStringCommands[command]
+				if(commandFunction) then
+					local args = {}
+					for _, arg in ipairs(findArgResults(argStrings)) do
+						local returnArg = {}
+						for _, listArg in ipairs(findResults(arg)) do
+							local command = isCommand(listArg)
+							if(command) then
+								local _, argsFromCommand = executeCommandFromSyntax(command)
+								if(argsFromCommand) then
+									for _, newArg in pairs(argsFromCommand) do
+										table.insert(returnArg, newArg)
+									end
+								end
+							else
+								table.insert(returnArg, listArg)
+							end
+						end
+						table.insert(args, returnArg)
+					end
+
+					local success, returnValue = pcall(commandFunction, table.unpack(args))
+
+					if(not success) then
+						self:log("<color=red>Syntax failed: "..syntax.."</color>")
+						if(returnValue) then
+							self:log("<color=red>"..returnValue.."</color>")
+						end
+					end
+
+					return success, returnValue
+				end
+			end
+
+			local function executeStringList(string)
+				local list = {}
+				for _, name in ipairs(findResults(string)) do
+					local command = isCommand(name)
+					local success, results = false, nil
+					if(command) then
+						success, results = executeCommandFromSyntax(command)
+						if(success and results) then
+							for _, _name in ipairs(results) do
+								table.insert(list, _name)						
+							end
+						end
+					end
+
+					if(not success) then
+						table.insert(list, name)
+					end
+				end
+				return list
+			end
+
+			self.commandContext = {
+				type = "meshes",
+				allowDupes = true
+			}
+			executeStringList(self.AssignedMeshes)
+
 			for team, name in pairs(TeamToName) do
 				local textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
-				local meshes = self.script.mutator.GetConfigurationString(name.."Meshes")
 				local texDatas = {}
-	
-				local function executeCommandFromSyntax(syntax)
-					syntax = syntax:upper()
-					local _, endIndex, command = syntax:find("([^:]+)")
-					local argStrings = syntax:sub(endIndex+2)
 
-					local commandFunction = self.runnableStringCommands[command]
-					if(commandFunction) then
-						local args = {}
-						for _, arg in ipairs(findArgResults(argStrings)) do
-							local returnArg = {}
-							for _, listArg in ipairs(findResults(arg)) do
-								local command = isCommand(listArg)
-								if(command) then
-									local _, argsFromCommand = executeCommandFromSyntax(command)
-									if(argsFromCommand) then
-										for _, newArg in pairs(argsFromCommand) do
-											table.insert(returnArg, newArg)
-										end
-									end
-								else
-									table.insert(returnArg, listArg)
-								end
-							end
-							table.insert(args, returnArg)
-						end
+				self.commandContext = {
+					type = "flags",
+					useType = true
+				}
 
-						local success, returnValue = pcall(commandFunction, table.unpack(args))
-	
-						if(not success) then
-							self:log("<color=red>Syntax failed: "..syntax.."</color>")
-							if(returnValue) then
-								self:log("<color=red>"..returnValue.."</color>")
-							end
-						end
-
-						return success, returnValue
-					end
+				local results = executeStringList(textures)
+				for _, _name in ipairs(results) do
+					local data = self:getData(self.commandContext.type, _name)
+					if(data) then
+						self:putDataForTeam(team, data)
+						table.insert(texDatas, data)									
+					else
+						self:log(_name.." is an invalid flag! Did you name it incorrectly?")
+					end	
 				end
-
-				local function executeForList(commandContext, string, identifier)
-					self.commandContext = commandContext
-					for _, name in ipairs(findResults(string)) do
-							
-						local command = isCommand(name)
-						local success, results = false, nil
-						if(command) then
-							success, results = executeCommandFromSyntax(command)
-							if(success and results) then
-								for _, _name in ipairs(results) do
-									local data = self:getData(self.commandContext.list, _name)
-									if(data) then
-										self:putDataForTeam(team, data)
-										if(self.commandContext.list == self.FlagPacks) then
-											table.insert(texDatas, data)											
-										end
-									else
-										self:log(_name.." is an invalid "..identifier.."! Did you name it incorrectly?")
-									end
-								end
-							end
-						end
-	
-						if(not success) then
-							local data = self:getData(self.commandContext.list, name)
-							if(data) then
-								self:putDataForTeam(team, data)
-								if(self.commandContext.list == self.FlagPacks) then
-									table.insert(texDatas, data)											
-								end							
-							else
-								self:log(name.." is an invalid "..identifier.."! Did you name it incorrectly?")
-							end
-						end
-					end
-				end
-
-				executeForList({list = self.FlagPacks}, textures, "flag")
-				executeForList({list = self.MeshPacks, allowDupes = true}, meshes, "mesh")
 
 				local firstTexData = texDatas[1]
 				local lastTexData = texDatas[#texDatas]
@@ -642,7 +652,7 @@ function MianFlagFramework:Update()
 				if(firstTexData and lastTexData) then
 					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)")
 					if(self.ChangeTeamNamesToFlagName) then
-						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
+						local name = (firstTexData == lastTexData and firstTexData.teamName:upper() and (Player.actor.team ~= team or self:getLengthOfDictWithKeyInTable("texture", self.PlayerData) <= 0)) or firstTexData.teamName:upper().." ALLIES"
 				
 						GameManager.SetTeamName(team, name)
 						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
@@ -667,7 +677,7 @@ function MianFlagFramework:Update()
 
 					for _, capturePoint in pairs(self.Flags) do
 						if(capturePoint.owner == team) then
-							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture(firstTexData.texture, firstTexData.overrideMaterialColor))
+							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", firstTexData.texture, firstTexData.overrideMaterialColor))
 						end
 					end
 
@@ -689,42 +699,125 @@ function MianFlagFramework:Update()
 	end
 end
 
+function MianFlagFramework:onMatchEnd(team)
+	if(self.VictoryText and self.VictoryText.activeSelf and self.ChangeTeamNamesToFlagName) then
+		local text = self.VictoryText.GetComponent(Text)
+		text.text = GameManager.GetTeamName(team).." VICTORY"
+	end
+end
+
 function MianFlagFramework:onActorSpawn(actor)
 	local team = actor.team
 	if(not team) then return end
-	local datas = self.TeamToData[actor.team]
-	local texture = self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
-	if(not texture) then
-		local length = self:getLengthOfDictWithKeyInTable("texture", datas)
-		if(length <= 0) then return end
-		texture = self:findRandomTableInDictWithKey("texture", datas).texture
-	end
+	local datas = (actor.isPlayer and self.PlayerData) or self.TeamToData[actor.team]
 
-	self.ActorsToTexture[actor] = texture
-	self.TextureForSpawn[team] = {texture=texture,added=0.3}
+	local texture = not actor.isPlayer and math.random(1, 5) <= 4 and self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
+	local willRandomize = actor.isPlayer or texture or math.random(1, 10) > 5
+	if(not texture and not willRandomize) then
+		local closestFlag = nil
+		local closestMagnitude = math.huge
 
-	-- Accessories handled here
-	if(actor.isPlayer) then return end
+		for _, capturePoint in ipairs(self.Flags) do
+			if(capturePoint.owner == actor.team and capturePoint.flagRenderer and capturePoint.flagRenderer.material) then
+				local magnitude = (capturePoint.transform.position - actor.position).magnitude
+				if(magnitude < closestMagnitude) then
+					closestFlag = capturePoint
+					closestMagnitude = magnitude
+				end
+			end
+		end
 
-	local meshLength = self:getLengthOfDictWithKeyInTable("mesh", datas)
-	if(meshLength <= 0) then return end
-
-	local mesh = self:findRandomTableInDictWithKey("mesh", datas).mesh
-
-	local skinnedMeshRenderers = actor.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)
-	local found = false
-	for _, meshRenderer in ipairs(skinnedMeshRenderers) do
-		for _, data in pairs(datas) do
-			if(meshRenderer.sharedMesh == data.mesh) then
-				meshRenderer.material = self:createOrGetExistingMaterialFromTexture(texture, nil, 1)
-				found = true
-				break
-			end 
+		if(closestFlag) then
+			texture = closestFlag.flagRenderer.material.mainTexture			
 		end
 	end
-	if(not found) then
-		actor:AddAccessory(mesh, {self:createOrGetExistingMaterialFromTexture(texture, nil, 1)})
+
+	if(not texture) then
+		local length = self:getLengthOfDictWithKeyInTable("texture", datas)
+		if(actor.isPlayer and length <= 0) then
+			datas = self.TeamToData[actor.team]
+			length = self:getLengthOfDictWithKeyInTable("texture", datas)
+		end
+		if(length > 0) then
+			texture = self:findRandomTableInDictWithKey("texture", datas).texture
+			willRandomize = true
+		end
 	end
+
+	if(texture) then
+		self.ActorsToTexture[actor] = texture
+		if(willRandomize and not actor.isPlayer) then
+			self.TextureForSpawn[team] = {texture=texture,added=1}
+		end
+	end
+
+	-- Accessories handled here
+	local datas = (actor.isPlayer and self:getLengthOfDictWithKeyInTable("mesh", self.PlayerData) > 0 and self.PlayerData) or self.FlagToMeshes
+
+	-- the below is really hacky code used to replace our already added accessories' materials. Preferably we shouldn't do this but like fuck all
+	-- local skinnedMeshRenderers = {}
+	-- for _, meshRenderer in ipairs(actor.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
+	-- 	table.insert(skinnedMeshRenderers, meshRenderer)
+	-- end
+	-- for _, meshRenderer in ipairs(actor.transform.Find("Soldier Ragdoll").gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
+	-- 	table.insert(skinnedMeshRenderers, meshRenderer)
+	-- end
+
+	-- local found = false
+	-- for _, meshRenderer in ipairs(skinnedMeshRenderers) do
+	-- 	for _, data in pairs(datas) do
+	-- 		if(meshRenderer.sharedMesh == data.mesh) then
+	-- 			meshRenderer.material = self:createOrGetExistingMaterialFromTexture("Meshes", texture, nil, 1)
+	-- 			found = true
+	-- 			break
+	-- 		end 
+	-- 	end
+	-- end
+	-- STEEL PLEASE ADD REMOVEACCESSORY SO I DONT NEED TO DO THE ABOVE OK
+
+	-- if(not found) then
+	actor.RemoveAccessories()
+
+	local randomizationPool = {}
+	if(datas == self.PlayerData) then
+		for _, _datas in pairs(datas) do
+			if(_datas.mesh) then
+				table.insert(randomizationPool, _datas)
+			end
+		end
+	elseif(texture and datas[texture.name]) then
+		for _, data in ipairs(datas[texture.name]) do
+			if(data.mesh) then
+				table.insert(randomizationPool, data)
+			end
+		end
+	end
+
+	local skillLevel = (actor.isPlayer and SkillLevel.Elite) or actor.aiController.skillLevel
+	local skillToNumber = {
+		[SkillLevel.Beginner] = 1,
+		[SkillLevel.Normal] = 2,
+		[SkillLevel.Veteran] = 3,
+		[SkillLevel.Elite] = 4
+	}
+	local count = skillToNumber[skillLevel]
+	while(count > 0 and #randomizationPool > 0) do
+		count = count - 1
+		local random = math.random(1, #randomizationPool)
+		local meshData = randomizationPool[random]
+		local flagMaterial = self:createOrGetExistingMaterialFromTexture("Meshes", texture, nil, 1)
+		local materials = {}
+		for _, material in ipairs(meshData.materials) do
+			if(#material.name >= 4 and material.name:sub(1, 4):upper() == "FLAG") then
+				table.insert(materials, flagMaterial)
+			else
+				table.insert(materials, material)
+			end
+		end
+		actor.AddAccessory(meshData.mesh, materials)
+		table.remove(randomizationPool, random)
+	end
+	-- end
 end
 
 function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
@@ -736,11 +829,14 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 
 	local datas = self.TeamToData[ownerToUse]
 	local texture
-	for _, data in pairs(datas) do
-		if(capturePoint.flagRenderer and capturePoint.flagRenderer.material.mainTexture == data.texture) then 
-			texture = data.texture
-		end
+
+	if(capturePoint.flagRenderer 
+	and capturePoint.flagRenderer.material 
+	and capturePoint.flagRenderer.material.mainTexture 
+	and (datas[capturePoint.flagRenderer.material.mainTexture.name] or (ownerToUse == Player.actor.team and self.PlayerData[capturePoint.flagRenderer.material.mainTexture.name]))) then 
+		texture = capturePoint.flagRenderer.material.mainTexture
 	end
+	
 	local friendlyActor = self:findFirstFriendlyActorWithinCapturePoint(capturePoint)
 	if(friendlyActor and friendlyActor.squad) then
 		friendlyActor = friendlyActor.squad.leader or friendlyActor
@@ -749,7 +845,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or self:findRandomTableInDictWithKey("texture", datas)
 
 	if(not texture) then
-		if(self.FinishedAddingPacks) then
+		if(self.FinishedAddingPacks and newOwner ~= Team.Neutral) then
 			self:log("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT") 			
 		end
 		if(capturePoint.flagRenderer ~= nil) then
@@ -759,16 +855,17 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		return
 	end
 
-	local texData = self:getData(self.FlagPacks, texture.name)
+	local texData = self:getData("flags", texture.name)
 
 	if(newOwner == ownerToUse) then
 		-- This means that the capture point was neutralized
 		if(self.OverlayLabel.activeSelf) then
 			local textComponent = self.OverlayLabel.GetComponent(Text)
-			local start, endI = textComponent.text:find("</color>")
+			local _, endI = textComponent.text:find("</color>")
+			local nameString = textComponent.text:sub(1, endI)
 			local endingString = textComponent.text:sub(endI+1)
 	
-			local displayName = (self.ChangeTeamNamesToFlagName and texData.teamName) or self.TeamToName[newOwner]
+			local displayName = (self.ChangeTeamNamesToFlagName and texData.teamName) or nameString
 			local tColor = (self.ChangeTeamColorToFlagColor and texData.teamColor) or ColorScheme.GetTeamColor(newOwner)
 			local color = Color(tColor.r, tColor.g, tColor.b)
 			local colorTag = ColorScheme.RichTextColorTag(color)
@@ -779,7 +876,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 
 		self.TextureForSpawn[capturePoint] = nil
 	end
-	self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture(texture))
+	self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", texture))
 end
 
 function MianFlagFramework:setPointMaterial(capturePoint, material)
@@ -797,6 +894,83 @@ end
 
 function MianFlagFramework:getOwner(capturePoint)
 	return capturePoint.pendingOwner or capturePoint.owner
+end
+
+function MianFlagFramework:getMutatorMetadata(list, name)
+	local mutatorData = list[string.upper(name)]
+	if(not mutatorData) then
+		error(name:upper().." is not a valid mutator!")
+	end
+	return mutatorData.metadata
+end
+
+function MianFlagFramework:getDatasFromMutator(listType, name)
+	local mutatorData = self.MutatorPacks[name]
+	if(not mutatorData) then
+		error(name:upper().." is not a valid mutator!")
+	end
+	local datas = {}
+	if(not listType) then
+		local validTypes = {"flags", "meshes"}
+		for _, type in ipairs(validTypes) do
+			local givenDatas = mutatorData[type]
+			if(givenDatas) then
+				for _name, data in pairs(givenDatas) do
+					datas[_name] = data
+				end
+			end
+		end
+	else
+		datas = mutatorData[listType]
+	end
+
+	return datas
+end
+
+function MianFlagFramework:getData(type, name)
+	if(not name) then
+		name = type
+		type = nil
+	end
+
+	for _name, data in pairs(self:getDatas(type)) do
+		if(_name == name) then
+			return data
+		end
+	end
+
+	return nil
+end
+
+function MianFlagFramework:getDatas(type)
+	local datas = {}
+	for _, mutatorPack in pairs(self.MutatorPacks) do
+		if(type) then
+			local givenDatas = mutatorPack[type]
+			if(givenDatas) then
+				for name, data in pairs(givenDatas) do
+					datas[name] = data
+				end
+			end
+		else
+			for _, givenDatas in pairs(mutatorPack) do
+				for name, data in pairs(givenDatas) do
+					datas[name] = data
+				end
+			end
+		end
+	end
+	return datas
+end
+
+function MianFlagFramework:retrieveMutatorsWithType(type)
+	local mutatorPacks = {}
+	for name, mutatorPack in pairs(self.MutatorPacks) do
+		if(mutatorPack[type]) then
+			mutatorPacks[name] = mutatorPack
+		end
+	end
+	return mutatorPacks
 end
 
 function MianFlagFramework:findRandomTableInDictWithKey(key, dict)
@@ -876,5 +1050,9 @@ function MianFlagFramework:getNameFlair(data)
 end
 
 function MianFlagFramework:log(...)
-	print("<color=#fc0fc0>[Custom Flag Framework]:</color>", ...)
+	local string = "<color=#fc0fc0>[Custom Flag Framework]:</color> "
+	for _, extraArg in ipairs({...}) do
+		string = string..extraArg
+	end
+	print(string)
 end

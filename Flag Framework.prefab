@@ -83,12 +83,8 @@ MonoBehaviour:
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 1
         value: 
-      - id: BlueMeshes
-        displayName: <color=blue>Eagle Accessories</color>
-        orderPriority: 2
-        value: 
-      - id: RedMeshes
-        displayName: <color=red>Raven Accessories</color>
+      - id: Meshes
+        displayName: <color=green>Accessories</color>
         orderPriority: 2
         value: 
       bools:
