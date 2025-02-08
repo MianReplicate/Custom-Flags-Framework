@@ -38,3 +38,6 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 ### How to create my own flag/accessory packs?
 
 - Find more information here on the [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/TEMPLATE-INFO.md)
+
+# Credits
+Special thanks to Wingnut for letting me use their WIP vehicles for testing out the new Pride Update involving extending flag textures to vehicles.

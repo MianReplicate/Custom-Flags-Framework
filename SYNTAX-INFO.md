@@ -30,18 +30,32 @@ To begin using a command, you want to press the one you want on the left. For th
 
 To start with, press the "ALL" button. Notice how the command looks in the output? Commands start and end with brackets. This is how the framework knows you are using a command. You might also notice that first word in the brackets is "ALL." This tells the framework you are trying to use the "ALL" command. 
 
-Additionally you'll notice there is a colon. The colon is there to separate what is known as ARGUMENTS. ARGUMENTS are information that is sent over to the command to tell it more on what to do and how to operate. In this case, the "ALL" command needs a list of mutators. Highlight the text after the colon and delete. Be careful NOT to delete the END bracket of the command. Then make sure your pointer (the blinking cursor) is located right after the colon. This matters because this tells the framework EXACTLY where to spawn your text at.
+Additionally you'll notice there is a colon. The colon is there to separate what is known as ARGUMENTS. ARGUMENTS are information that is sent over to the command to tell it more on what to do and how to operate. In this case, the "ALL" command needs a list of mutators. Highlight the text after the colon and delete up **until** the end bracket. Then make sure your pointer (the blinking cursor) is located right after the colon. This matters because this tells the framework EXACTLY where to spawn your text at.
 
 Next, you want to press the MUTATORS button at the top to swap over to a list of mutators. Afterwards, press on any mutator you want. Finally, you'll notice that the mutator ID is spawned where your cursor was.
 
 <img src="https://i.imgur.com/LE9Q4Re.png">
 
-Congralutations! You've successfully completed your first command. This will add all the flags from the flag pack to a select team. By the way, you are not restricted to one mutator and can add more mutators into the command if you want. Just make sure they are separated by commas!
+Congralutations! You've successfully completed your first command. This will add all the flags from the flag pack to a select team. Note that every argument is treated as a list so you can add as MANY of a specific datatype as you want into an argument. E.g. since ALL takes a MUTATOR input, you can add MULTIPLE mutators and ALL will grab the flags from ALL of them. Here's a visualization of what this might look like:
 
-This is about it for the command structure. The only last thing you need to know is that you can still ADD data names after commands or before them if you want, AND you can put commands WITHIN commands. If you want to more on how this works or learn the rest of commands or want more examples, you can see below in "More Information on Commands:" and "Example Configs"
+Assigning by Name: "Russia,Germany,USA,UK,Turkey,North Korea,South Korea"
+Assigning by Command: {ALL:MIANPOLITICALFLAGS} -> OUTPUTS "Russia,Germany,USA,UK,Turkey,North Korea,South Korea"
+
+See how much easier it is to add in all your flags because of the "ALL" command?
+
+You can also use commands within commands. Here's an example: {ALL:{ALLMUTATORS:Flags}}
+This command adds ALL flags from ALL of the flag packs that are installed. Note how there are more brackets within the "ALL" command. This is to indicate the next command which will then have its own set of arguments you need to define. In this case, we call "ALLMUTATORS:Flags" which outputs every single flag pack installed, then it passes it to the "ALL" command which then uses all those flag packs to then output every single flag from those flag packs. Here's a visualization:
+
+{ALL:{ALLMUTATORS:Flags}} -> {ALL:MIANPOLITICALFLAGS,MIANPRIDEFLAGS,EXAMPLEPACK2,EXAMPLEPACK3}
+
+Notice how this command simplified the entire process and made it less tedious.
+
+This is about it for the command structure. If you want to learn the rest of commands (which I recommend) or want more examples, you can see below in "More Information on Commands:" and "Example Configs"
 
 ### More Information On Commands:
 ```
+-- The below are commands that can be run in ANY output
+
 LIST = "LIST:ADD_OR_GET:ADD_NAMES_HERE"
 Can be used to add or get a user-defined list filled with names
 Example: {LIST:ADD:Super Powers:Russia,UK,US} -- Adds a user-defined list named "Super Powers" which includes Russia, UK, and the US
@@ -130,8 +144,8 @@ You can add multiple datas and commands to any team as long as they are separate
 
 The order of the output matters! If you want the framework to use a color and name from a specified flag for your team, that FLAG must be typed first in the configuration!
 
-ACCESSORIES can only be added in the ACCESSORIES output
-FLAGS can only be added in the FLAG outputs
+ACCESSORIES can only be added to flags in the ACCESSORIES output
+FLAGS can only be added to teams in the FLAG outputs
 
 **THE FOLLOWING PARAGRAPHS DO NOT APPLY FOR MESHES:** If using commands, it is important to note that the framework deliberately avoids adding in flags already assigned to a team for each command. For example, if you use the ALL command to add all flags to one team, and then use it on the other team, you will find that the other team WILL not have the flags given BECAUSE the other team already has those flags. This is to avoid giving teams the same flags in order to prevent players from getting confused on what team owns a capture point.
 
