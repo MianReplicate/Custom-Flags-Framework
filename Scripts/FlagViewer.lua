@@ -119,7 +119,8 @@ function FlagViewer:Awake()
 		y = 90,
 		z = 0
 	}
-	self.selectedData = nil
+	self.selectedFlag = nil
+	self.selectedMesh = nil
 end
 
 function FlagViewer:addInputable(inputField)
@@ -140,6 +141,7 @@ function FlagViewer:Start()
 	self.UIText = self.targets["UI Text"].GetComponent(Text)
 	self.MutatorTemplate = self.targets.MutatorTemplate
 	self.FlagTemplate = self.targets.FlagTemplate
+	self.MeshTemplate = self.targets.MeshTemplate
 	self.MutatorList = self.targets.MutatorList
 	self.FlagList = self.targets.FlagList
 	self.CategoryCounter = self.targets.CategoryCounter
@@ -147,26 +149,31 @@ function FlagViewer:Start()
 	self.Backward = self.targets.Backward.GetComponent(Button)
 	self.ActorSpawn = self.targets.ActorSpawn
 	self.Search = self.targets.Search.GetComponent(InputField)
+	self.Flags = self.targets.FlagsButton.GetComponent(Button)
+	self.Meshes = self.targets.AccessoriesButton.GetComponent(Button)
+	self.onFlags = true
+	self.ActorYRotation = 0
 	self.Creator = {
 		Search = self.targets.CreatorSearch.GetComponent(InputField),
 		Output = self.targets.CreatorOutput.GetComponent(InputField),
 		Content = self.targets.CreatorContent,
-		Template = self.targets.CreatorTemplate,
 		Forward = self.targets.CreatorForward.GetComponent(Button),
 		Backward = self.targets.CreatorBackward.GetComponent(Button),
 		CategoryCounter = self.targets.CreatorCategoryCounter,
 		CommandTemplate = self.targets.CommandTemplate,
 		CommandContent = self.targets.CommandContent,
-		Flags = self.targets.FlagsButton.GetComponent(Button),
-		Mutators = self.targets.MutatorsButton.GetComponent(Button),
-		onFlags = true
+		Flags = self.targets.FlagsCreatorButton.GetComponent(Button),
+		Mutators = self.targets.MutatorsCreatorButton.GetComponent(Button),
+		Accessories = self.targets.AccessoriesCreatorButton.GetComponent(Button),
+		currentlyOn = "flags"
 	}
 	self.MutatorTemplate.SetActive(false)
 	self.FlagTemplate.SetActive(false)
+	self.MeshTemplate.SetActive(false)
 
 	self.mutatorList = list.createNewList(self.MutatorList.transform, nil, true)
 	self.defaultList = list.createNewList(self.FlagList.transform, self.CategoryCounter.GetComponentInChildren(Text))
-	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(Text))
+	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(TextMeshPro))
 
 	self.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.defaultList, conditionFunction=self.conditionForMainList})
 	self.Creator.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.creatorList, conditionFunction=self.conditionForCreator})
@@ -175,8 +182,11 @@ function FlagViewer:Start()
 	self.Backward.onClick.AddListener(self, "clickedBackward")
 	self.Creator.Forward.onClick.AddListener(self, "clickedForwardCreator")
 	self.Creator.Backward.onClick.AddListener(self, "clickedBackwardCreator")
-	self.Creator.Flags.onClick.AddListener(self, "clickedFlagButton")
-	self.Creator.Mutators.onClick.AddListener(self, "clickedMutatorButton")
+	self.Creator.Flags.onClick.AddListener(self, "filterFlagCreator")
+	self.Creator.Mutators.onClick.AddListener(self, "filterMutatorCreator")
+	self.Creator.Accessories.onClick.AddListener(self, "filterAccessoryCreator")
+	self.Flags.onClick.AddListener(self, "filterFlag")
+	self.Meshes.onClick.AddListener(self, "filterMesh")
 
 	self.Creator.Output.onEndEdit.AddListener(self, "outputExited")
 
@@ -211,40 +221,69 @@ function FlagViewer:Update()
 			self.Told = true
 			self.FlagMorpherObject.GetComponent(TriggerScriptedSignal).Send("playFrameworkNotDetected")
 		end
-	elseif(self.framework and self.framework.FinishedAddingTextures and not self.frameworkChecked) then
+	elseif(self.framework and self.framework.FinishedAddingPacks and not self.frameworkChecked) then
 		self.frameworkChecked = true
 		Screen.UnlockCursor()
 
-		self.installedFlagMutators = self.framework:getLengthOfDict(self.framework.FlagData)
-		self.installedMeshMutators = self.framework:getLengthOfDict(self.framework.MeshData)
+		local installedFlagMutators = 0
+		local installedMeshMutators = 0
+		local packs = self.framework.MutatorPacks
 
-		for _, mutatorData in pairs(self.framework.FlagData) do
-			self.mutatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.mutatorList, "clickedMutator"))
-			self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreator", self.Creator.Template)
-
-			for _, data in pairs(mutatorData.datas) do
-				self:createFlagInList(mutatorData.metadata.name, data, self.defaultList, "clickedFlag")
-				self:createFlagInList(nil, data, self.creatorList, "clickedFlagCreator", self.Creator.Template)
+		for _, pack in pairs(packs) do
+			if(pack["meshes"]) then
+				installedMeshMutators = installedMeshMutators + 1
+			end
+			if(pack["flags"]) then
+				installedFlagMutators = installedFlagMutators + 1
 			end
 		end
 
-		for _, mutatorData in pairs(self.framework.MeshData) do
-			self.mutatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.mutatorList, "clickedMutator"))
-			-- self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreator", self.Creator.Template)
+		self.installedFlagMutators = installedFlagMutators
+		self.installedMeshMutators = installedMeshMutators
 
-			for _, data in pairs(mutatorData.datas) do
-				self:createMeshInList(mutatorData.metadata.name, data, self.defaultList, "clickedMesh")
-				-- self:createMeshInList(nil, data, self.creatorList, "clickedFlagCreator", self.Creator.Template)
+		for _, mutatorData in pairs(self.framework.MutatorPacks) do
+			self.mutatorList:makeObjectViewable(self:createMutatorInList(mutatorData, self.mutatorList, "clickedMutator"))
+			self:createMutatorInList(mutatorData, self.creatorList, "clickedMutatorCreatorButton", self.FlagTemplate)
+
+			local flags = mutatorData.flags
+			local meshes = mutatorData.meshes
+			if(flags) then
+				for _, data in pairs(flags) do
+					self:createFlagInList(mutatorData.metadata.name, data, self.defaultList, "clickedFlag")
+					self:createFlagInList(nil, data, self.creatorList, "clickedFlagCreator", self.FlagTemplate)
+				end
+			end
+
+			if(meshes) then
+				for _, data in pairs(meshes) do
+					self:createMeshInList(mutatorData.metadata.name, data, self.defaultList, "clickedMesh")
+					self:createMeshInList(nil, data, self.creatorList, "clickedMeshCreator", self.MeshTemplate)
+				end
 			end
 		end
 
 		self.mutatorList:refreshViewables()
 		self.creatorList:refreshViewables()
 
-		local actor = ActorManager.CreateAIActor(Team.Blue)
-		actor.SpawnAt(self.ActorSpawn.transform.position, self.ActorSpawn.transform.rotation)
+		self.demoActor = ActorManager.CreateAIActor(Team.Blue)
+		self.demoActor.SpawnAt(self.ActorSpawn.transform.position, self.ActorSpawn.transform.rotation)
+		self.demoActor.aiController.OverrideDefaultMovement()
+		for i = 0, 4, 1 do
+			self.demoActor.RemoveWeapon(i)
+		end
 
 		self:updateText()
+	end
+
+	if(self.demoActor) then
+		self.ActorYRotation = math.max(0, math.min(360, self.ActorYRotation + 0.35))
+		if(self.ActorYRotation == 360) then
+			self.ActorYRotation = 0
+		end
+
+		local rotation = self.demoActor.transform.rotation
+		local euler = Quaternion.Euler(rotation.eulerAngles.x, self.ActorYRotation, rotation.eulerAngles.z)
+		self.demoActor.transform.rotation = euler
 	end
 
 	local toSet = {}
@@ -262,7 +301,7 @@ function FlagViewer:Update()
 	end
 
 	local euler = Quaternion.Euler(toSet.x, toSet.y, toSet.z)
-	self.Camera.transform.SetPositionAndRotation(self.Camera.transform.position, euler)
+	self.Camera.transform.rotation = euler
 end
 
 function FlagViewer:createMutatorInList(mutatorData, list, functionName, optionalTemplate)
@@ -288,14 +327,14 @@ function FlagViewer:createMutatorInList(mutatorData, list, functionName, optiona
 end
 
 function FlagViewer:createMeshInList(mutatorName, data, list, functionName, optionalTemplate)
-	local mesh = GameObject.Instantiate(optionalTemplate or self.FlagTemplate, list:getTransform())
-	-- local image = mesh.GetComponentInChildren(RawImage)
+	local mesh = GameObject.Instantiate(optionalTemplate or self.MeshTemplate, list:getTransform())
 	local name = mesh.GetComponentInChildren(Text)
+	local button = mesh.GetComponentInChildren(Button)
 
-	name.text = data.mesh.name
+	name.text = data.name
 
 	if(self[functionName]) then
-		image.onPointerClick.AddListener(self, functionName,data)		
+		button.onPointerClick.AddListener(self, functionName,data)		
 	end
 	local object = {
 		metadata = {
@@ -315,7 +354,7 @@ function FlagViewer:createFlagInList(mutatorName, data, list, functionName, opti
 	local name = flag.GetComponentInChildren(Text)
 
 	image.texture = data.texture
-	name.text = data.texture.name
+	name.text = data.name
 	local teamColor = data.teamColor
 	local color = (teamColor and Color(teamColor.r, teamColor.g, teamColor.b)) or Color(255, 255, 255)
 	name.color = color
@@ -338,22 +377,26 @@ end
 function FlagViewer:clickedFlag()
 	local texData = CurrentEvent.listenerData
 	local color = texData.teamColor or ColorScheme.GetTeamColor(Team.Blue)
-	if(texData ~= self.selectedData) then
-		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createOrGetExistingMaterialFromTexture(texData.texture))
+	if(texData ~= self.selectedFlag) then
+		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createOrGetExistingMaterialFromTexture("Flags", texData.texture))
 		ColorScheme.setTeamColor(Team.Blue, Color(color.r, color.g, color.b))
-		self.selectedData = texData
+		self.selectedFlag = texData
 
+		self.ignoreListener = true
+		self:clickedMesh(self.selectedMesh)
+		self.ignoreListener = false
 		self:updateText()
 	end
 end
 
-function FlagViewer:clickedMesh()
-	local meshData = CurrentEvent.listenerData
-	if(meshData ~= self.selectedData) then
-		self.selectedData = meshData
+function FlagViewer:clickedMesh(meshData)
+	meshData = (not self.ignoreListener and CurrentEvent.listenerData) or meshData
+	if((meshData ~= self.selectedMesh or meshData ~= CurrentEvent.listenerData) and meshData) then
+		self.selectedMesh = meshData
 
-		if(not self.actorAccessory) then
-			actor:AddAccessory(meshData.mesh, {self.framework:createOrGetExistingMaterialFromTexture()})
+		self.demoActor.RemoveAccessories()
+		if(self.selectedFlag ~= nil) then
+			self.framework:addMeshDataToActor(self.demoActor, self.selectedFlag.texture, self.selectedMesh)			
 		end
 
 		self:updateText()
@@ -372,12 +415,13 @@ end
 
 function FlagViewer:conditionForMainList(objectData)
 	local metadata = objectData.metadata
-	return type(metadata) ~= "table" or not metadata.mutatorOwner or metadata.mutatorOwner == self.selectedMutator.metadata.name
+	local isFlag = metadata.data.texture ~= nil
+	return ((not isFlag and not self.onFlags) or (isFlag and self.onFlags)) and (type(metadata) ~= "table" or not metadata.mutatorOwner or metadata.mutatorOwner == self.selectedMutator.metadata.name)
 end
 
 function FlagViewer:conditionForCreator(objectData)
-	local isFlag = objectData.metadata ~= nil
-	return (not isFlag and not self.Creator.onFlags) or (isFlag and self.Creator.onFlags)
+	local whatIsThis = (objectData.metadata == nil and "mutators") or (objectData.metadata.data.texture and "flags") or (objectData.metadata.data.mesh and "meshes")
+	return whatIsThis == self.Creator.currentlyOn
 end
 
 function FlagViewer:clickedForward()
@@ -396,14 +440,29 @@ function FlagViewer:clickedBackwardCreator()
 	self.creatorList:changeToCategory(self.creatorList.currentCategory - 1)
 end
 
-function FlagViewer:clickedFlagButton()
-	self.Creator.onFlags = true
+function FlagViewer:filterFlagCreator()
+	self.Creator.currentlyOn = "flags"
 	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
 end
 
-function FlagViewer:clickedMutatorButton()
-	self.Creator.onFlags = false
+function FlagViewer:filterMutatorCreator()
+	self.Creator.currentlyOn = "mutators"
 	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
+end
+
+function FlagViewer:filterAccessoryCreator()
+	self.Creator.currentlyOn = "meshes"
+	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
+end
+
+function FlagViewer:filterFlag()
+	self.onFlags = true
+	self:calculateSearch(self.Search.text, self.defaultList, self.conditionForMainList)
+end
+
+function FlagViewer:filterMesh()
+	self.onFlags = false
+	self:calculateSearch(self.Search.text, self.defaultList, self.conditionForMainList)
 end
 
 function FlagViewer:triggerCommand()
@@ -415,26 +474,17 @@ end
 
 function FlagViewer:clickedFlagCreator()
 	local texData = CurrentEvent.listenerData
-	local command = self.creatorEditor.addingCommand
-	if(not command) then
-		self:addToOutput(texData.texture.name)
-	end
+	self:addToOutput(texData.texture.name)
 end
 
 function FlagViewer:clickedMeshCreator()
 	local meshData = CurrentEvent.listenerData
-	local command = self.creatorEditor.addingCommand
-	if(not command) then
-		self:addToOutput(meshData.mesh.name)
-	end
+	self:addToOutput(meshData.mesh.name)
 end
 
-function FlagViewer:clickedMutatorCreator()
+function FlagViewer:clickedMutatorCreatorButton()
 	local mutatorData = CurrentEvent.listenerData
-	local command = self.creatorEditor.addingCommand
-	if(not command) then
-		self:addToOutput(mutatorData.metadata.name)
-	end
+	self:addToOutput(mutatorData.metadata.name)
 end
 
 function FlagViewer:calculateSearch(text, list, conditionFunction)
@@ -512,13 +562,13 @@ function FlagViewer:wrapCommand(command)
 end
 
 function FlagViewer:updateText()
-	self.UIText.text = "Framework Version: "..self.framework.version.."\nInstalled Flag Mutators: "..self.installedFlagMutators.."\nInstalled Mesh Mutators: "..self.installedMeshMutators.."\nSelected Mutator: "..self.selectedMutator.metadata.name.."\nSelected Data: "..self.framework:getTexNameFlair(self.selectedData)
+	self.UIText.text = "Framework Version: "..self.framework.version.."\nInstalled Flag Mutators: "..self.installedFlagMutators.."\nInstalled Mesh Mutators: "..self.installedMeshMutators.."\nSelected Mutator: "..self.selectedMutator.metadata.name.."\nSelected Flag: "..self.framework:getNameFlair(self.selectedFlag).."\nSelected Mesh: "..self.framework:getNameFlair(self.selectedMesh)
 end
 
 function FlagViewer:log(...)
-	local string = "color=#00ff00>[Flag Viewer]:</color> "
+	local string = "<color=#00ff00>[Flag Viewer]:</color> "
 	for _, extraArg in ipairs({...}) do
-		string = string..extraArg
+		string = string..tostring(extraArg)
 	end
 	print(string)
 end

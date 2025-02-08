@@ -30,7 +30,7 @@ Step 1. Rename the mutator, change the description and replace the cover in the 
 
 Step 2. Open up Blender and start making a mesh on the armature. This can be a custom skin or the default skin. Just make sure you tell users if you are using a custom skin for the mesh as they appear weirdly for other skins. Ensure you also have UV maps on the meshes to determine where textures will be placed. 
 
-Step 3 (Optional). If you want a part of your mesh's face to use the material from the FLAG that is assigned to a bot, assign any material called "FLAG" to any desired faces. Use any texture you'd like to use for helping you set up UV maps, etc. This material will automatically be replaced with the one ingame so ANY changes you do to this material will not matter AS long as the name is "FLAG".
+Step 3 (Optional). If you want a part of your mesh's face to use the material from the FLAG that is assigned to a bot, assign any material called "FLAG" to any desired faces. Assign a texture to this material that will be the default placeholder. It will automatically be replaced with the flag texture.
 
 Step 4. Export the mesh as an FBX file with the recommended Ravenfield settings (Look in RFTools\Models for a picture of the recommended settings). Make sure you name the mesh in Blender and the exported file what you want them to be named. This will BE the name that users have to put in the configuration menu in order to apply the mesh to a team. Also make sure you have the "Armature" selected when exporting the mesh!
 
@@ -56,3 +56,4 @@ Step 10. You are pretty much done. Good job for making a mesh pack :). If you ha
 - Actors (the bots) ingame have a hardcoded mesh limit for performance reasons (it depends on their skill level). If you want to use multiple faces with a mesh, that is possible! Ctrl + J is used to join meshes together if needed. E.g., having a front part and a back part combined as one mesh.
 - Be extremely conservative with your faces. Remember, THESE are getting applied on HUNDREDS of bots! Users will likely never be looking too closely at the meshes so DO not put much detail on them or use many faces.
 - If the mesh is not moving with the rig/bones, make sure you are weight painting and rigging correctly.
+- If you are making or plan on making a custom vehicle, the framework can replace the textures of materials on it named "FLAG" to the flag texture of the actor that is driving it! When the actor stops driving the vehicle, the default placeholder texture is placed back.

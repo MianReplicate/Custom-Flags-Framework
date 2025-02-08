@@ -106,12 +106,20 @@ MonoBehaviour:
         value: 1
       - id: FunnyMode
         displayName: funny mode (dont enable this seriously you will kill your eyes)
-        orderPriority: 9
+        orderPriority: 11
         value: 0
       - id: AvoidDupeData
         displayName: Auto Rename Dupe Data
-        orderPriority: 8
+        orderPriority: 10
         value: 1
+      - id: ChangeScoreboardToTeamFlag
+        displayName: Change Scoreboard BG to Flag
+        orderPriority: 4
+        value: 1
+      - id: AlwaysRandomizeActorFlag
+        displayName: Always Randomize Assigned Flag for Actor
+        orderPriority: 12
+        value: 0
       dropdowns:
       - id: ExecuteConfigForTeam
         displayName: What Team's Config to Execute First

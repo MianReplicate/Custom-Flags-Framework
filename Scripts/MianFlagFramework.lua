@@ -78,6 +78,10 @@ local function findArgResults(str)
     return results
 end
 
+function MianFlagFramework:canBeReplacedWithFlagTexture(material)
+	return #material.name >= 4 and material.name:sub(1, 4):upper() == "FLAG"
+end
+
 function MianFlagFramework:Awake()
 	self.version = "2.1.0"
 	self.gameVersion = "30"
@@ -86,6 +90,8 @@ function MianFlagFramework:Awake()
 	self.Flags = ActorManager.capturePoints
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
 	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
+	self.ChangeScoreboardToTeamFlag = self.script.mutator.GetConfigurationBool("ChangeScoreboardToTeamFlag")
+	self.AlwaysRandomizeActorFlag = self.script.mutator.GetConfigurationBool("AlwaysRandomizeActorFlag")
 	self.DefaultWaitTimer = self.script.mutator.GetConfigurationInt("WaitForMutators")
 	self.IgnoreFailedCapturePoint = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
 	self.AlertedUser = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
@@ -100,6 +106,7 @@ function MianFlagFramework:Awake()
 	self.FinishedAddingPacks = false
 	self.OverlayLabel = GameObject.Find("Ingame UI Container(Clone)/New Ingame UI/Overlay Label Element/Overlay Label")
 	self.VictoryText = GameObject.Find("Ingame UI Container(Clone)/Victory UI Canvas/Victory Panel/Victory Focus/Victory Text")
+	self.OldVehicleTextures = {}
 
 	-- This shows all the textures for one team
 	self.TeamToName = {
@@ -308,7 +315,7 @@ function MianFlagFramework:Awake()
 end
 
 function MianFlagFramework:Start()
-	for _, capturePoint in pairs(self.Flags) do
+	for _, capturePoint in ipairs(self.Flags) do
 		self:autoSetPointMaterial(capturePoint)
 		self.script.AddValueMonitor("pendingOwner", "onPendingOwnerChanged", capturePoint)
 	end
@@ -317,6 +324,7 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointNeutralized.AddListener(self,"autoSetPointMaterial")
 	GameEvents.onActorSpawn.AddListener(self, "onActorSpawn")
 	GameEvents.onMatchEnd.AddListener(self, "onMatchEnd")
+	GameEvents.onVehicleSpawn.AddListener(self, "onVehicleSpawned")
 end
 -- The two functions below are to handle compatiblity with old mutator packs
 function MianFlagFramework:addTextureData()
@@ -652,7 +660,7 @@ function MianFlagFramework:Update()
 				if(firstTexData and lastTexData) then
 					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)")
 					if(self.ChangeTeamNamesToFlagName) then
-						local name = (firstTexData == lastTexData and firstTexData.teamName:upper() and (Player.actor.team ~= team or self:getLengthOfDictWithKeyInTable("texture", self.PlayerData) <= 0)) or firstTexData.teamName:upper().." ALLIES"
+						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
 				
 						GameManager.SetTeamName(team, name)
 						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
@@ -675,6 +683,14 @@ function MianFlagFramework:Update()
 						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
 					end
 
+					if(self.ChangeScoreboardToTeamFlag) then
+						local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific).GetComponent(Image)
+						local a = teamPanelImage.color.a
+						teamPanelImage.material = self:createOrGetExistingMaterialFromTexture("UI", firstTexData.texture, nil, 1, teamPanelImage.material)
+						local color = Color(0.6, 0.6, 0.6, a)
+						teamPanelImage.color = color
+					end
+
 					for _, capturePoint in pairs(self.Flags) do
 						if(capturePoint.owner == team) then
 							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", firstTexData.texture, firstTexData.overrideMaterialColor))
@@ -685,6 +701,10 @@ function MianFlagFramework:Update()
 				end
 
 				lastTeam = true
+			end
+		
+			for _, vehicle in ipairs(ActorManager.vehicles) do
+				self:onVehicleSpawned(vehicle)
 			end
 		end
 	end
@@ -706,19 +726,50 @@ function MianFlagFramework:onMatchEnd(team)
 	end
 end
 
+function MianFlagFramework:onDriverChanged()
+	local vehicle = CurrentEvent.listenerData
+	local driver = vehicle.driver
+
+	local meshRenderers = vehicle.gameObject.GetComponentsInChildren(MeshRenderer)
+	for _, meshRenderer in ipairs(meshRenderers) do
+		for _, material in ipairs(meshRenderer.materials) do
+			if(self:canBeReplacedWithFlagTexture(material)) then
+				local texture = (driver and self.ActorsToTexture[driver]) or self.OldVehicleTextures[material]
+				material.SetTexture("_MainTex", texture)
+				if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
+					self.OldVehicleTextures[material] = texture
+				end
+			end
+		end
+	end
+end
+
+function MianFlagFramework:vehicleDriver()
+	if(not CurrentEvent.listenerData) then return end
+	return CurrentEvent.listenerData.driver
+end
+
+function MianFlagFramework:onVehicleSpawned(vehicle)
+	self.script.AddValueMonitor("vehicleDriver", "onDriverChanged", vehicle)
+end
+
 function MianFlagFramework:onActorSpawn(actor)
 	local team = actor.team
 	if(not team) then return end
 	local datas = (actor.isPlayer and self.PlayerData) or self.TeamToData[actor.team]
 
-	local texture = not actor.isPlayer and math.random(1, 5) <= 4 and self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
-	local willRandomize = actor.isPlayer or texture or math.random(1, 10) > 5
+	local texture = not actor.isPlayer and not self.AlwaysRandomizeActorFlag and math.random(1, 5) <= 4 and self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
+	local willRandomize = actor.isPlayer or texture or math.random(1, 10) > 5 or self.AlwaysRandomizeActorFlag
 	if(not texture and not willRandomize) then
 		local closestFlag = nil
 		local closestMagnitude = math.huge
 
 		for _, capturePoint in ipairs(self.Flags) do
-			if(capturePoint.owner == actor.team and capturePoint.flagRenderer and capturePoint.flagRenderer.material) then
+			if(capturePoint.owner == actor.team 
+			and capturePoint.flagRenderer 
+			and capturePoint.flagRenderer.material 
+			and capturePoint.flagRenderer.material.mainTexture 
+			and datas[capturePoint.flagRenderer.material.mainTexture.name]) then
 				local magnitude = (capturePoint.transform.position - actor.position).magnitude
 				if(magnitude < closestMagnitude) then
 					closestFlag = capturePoint
@@ -805,19 +856,22 @@ function MianFlagFramework:onActorSpawn(actor)
 		count = count - 1
 		local random = math.random(1, #randomizationPool)
 		local meshData = randomizationPool[random]
-		local flagMaterial = self:createOrGetExistingMaterialFromTexture("Meshes", texture, nil, 1)
-		local materials = {}
-		for _, material in ipairs(meshData.materials) do
-			if(#material.name >= 4 and material.name:sub(1, 4):upper() == "FLAG") then
-				table.insert(materials, flagMaterial)
-			else
-				table.insert(materials, material)
-			end
-		end
-		actor.AddAccessory(meshData.mesh, materials)
+		self:AddMeshDataToActor(actor, texture, meshData)
 		table.remove(randomizationPool, random)
 	end
-	-- end
+end
+
+function MianFlagFramework:addMeshDataToActor(actor, texture, meshData)
+	local flagMaterial = self:createOrGetExistingMaterialFromTexture("Flat", texture, nil, 1)
+	local materials = {}
+	for _, material in ipairs(meshData.materials) do
+		if(self:canBeReplacedWithFlagTexture(material)) then
+			table.insert(materials, flagMaterial)
+		else
+			table.insert(materials, material)
+		end
+	end
+	actor.AddAccessory(meshData.mesh, materials)
 end
 
 function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
@@ -1052,7 +1106,7 @@ end
 function MianFlagFramework:log(...)
 	local string = "<color=#fc0fc0>[Custom Flag Framework]:</color> "
 	for _, extraArg in ipairs({...}) do
-		string = string..extraArg
+		string = string..tostring(extraArg)
 	end
 	print(string)
 end

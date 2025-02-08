@@ -71,7 +71,7 @@ Gets a random specific number of data(s) from a given list.
 Example: {RANDOMIZE:USA,Russia,Germany,UK:2} -- This would give me two random datas from the datas I chose: USA, Russia, Germany, UK.
 
 PLAYER = "PLAYER:FLAGS_OR_MESHES:ADD_NAMES_HERE"
-If you wanna be special, you can assign flags/accessories to yourself here. This is a separate list that is unique to you. Thus you will only get flags/accessories from this list and nobody else. If you wanted to be the only British person on your team, you could do that. (sorta)
+If you wanna be special, you can assign flags/accessories to yourself here. This is a separate list that is unique to you. Thus you will only get flags/accessories from this list and nobody else. If you wanted to be the only British person on your team, you could do that.
 Example: {PLAYER:FLAGS:USA} -- Assigns the USA flag to the player actor
 Example 2: {PLAYER:MESHES:Vest,Front Helmet} -- Assigns the vest and front helmet accessories to the player actor
 Example 3: {PLAYER:FLAGS:Russia,Germany} -- Assigns the Russia and Germany flag to the player actor 
