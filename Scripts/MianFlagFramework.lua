@@ -392,9 +392,10 @@ function MianFlagFramework:addMeshPack(mutatorData)
 		}
 		mutatorTable.meshes = {}
 
-		for _, meshData in pairs(mutatorData.CustomMeshes) do
-			local mesh = meshData.mesh
-			local materials = meshData.materials
+		for _, gameObj in pairs(mutatorData.CustomMeshes) do
+			local renderer = gameObj.GetComponent(SkinnedMeshRenderer)
+			local mesh = renderer.sharedMesh
+			local materials = renderer.materials
 			local name = mesh.name:upper()
 			mesh.name = name
 			
@@ -414,7 +415,8 @@ function MianFlagFramework:addMeshPack(mutatorData)
 			mutatorTable.meshes[nameToUse] = {
 				mesh=mesh,
 				name = nameToUse,
-				materials = materials
+				materials = materials,
+				gameObject = gameObj
 			}
 		end
 		
@@ -730,7 +732,13 @@ function MianFlagFramework:onDriverChanged()
 	local vehicle = CurrentEvent.listenerData
 	local driver = vehicle.driver
 
-	local meshRenderers = vehicle.gameObject.GetComponentsInChildren(MeshRenderer)
+	local meshRenderers = {} 
+	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
+		table.insert(meshRenderers, renderer)
+	end
+	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
+		table.insert(meshRenderers, renderer)
+	end
 	for _, meshRenderer in ipairs(meshRenderers) do
 		for _, material in ipairs(meshRenderer.materials) do
 			if(self:canBeReplacedWithFlagTexture(material)) then
@@ -738,6 +746,8 @@ function MianFlagFramework:onDriverChanged()
 				material.SetTexture("_MainTex", texture)
 				if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
 					self.OldVehicleTextures[material] = texture
+				elseif(driver and texture == self.ActorsToTexture[driver]) then
+					material.color = Color(1, 1, 1, 1)
 				end
 			end
 		end
@@ -856,7 +866,7 @@ function MianFlagFramework:onActorSpawn(actor)
 		count = count - 1
 		local random = math.random(1, #randomizationPool)
 		local meshData = randomizationPool[random]
-		self:AddMeshDataToActor(actor, texture, meshData)
+		self:addMeshDataToActor(actor, texture, meshData)
 		table.remove(randomizationPool, random)
 	end
 end

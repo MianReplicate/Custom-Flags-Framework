@@ -152,6 +152,8 @@ function FlagViewer:Start()
 	self.Flags = self.targets.FlagsButton.GetComponent(Button)
 	self.Meshes = self.targets.AccessoriesButton.GetComponent(Button)
 	self.onFlags = true
+	self.demoActor = self.targets.DemoActor
+	self.accessory = self.targets.Accessory
 	self.ActorYRotation = 0
 	self.Creator = {
 		Search = self.targets.CreatorSearch.GetComponent(InputField),
@@ -265,26 +267,18 @@ function FlagViewer:Update()
 		self.mutatorList:refreshViewables()
 		self.creatorList:refreshViewables()
 
-		self.demoActor = ActorManager.CreateAIActor(Team.Blue)
-		self.demoActor.SpawnAt(self.ActorSpawn.transform.position, self.ActorSpawn.transform.rotation)
-		self.demoActor.aiController.OverrideDefaultMovement()
-		for i = 0, 4, 1 do
-			self.demoActor.RemoveWeapon(i)
-		end
-
 		self:updateText()
 	end
 
-	if(self.demoActor) then
-		self.ActorYRotation = math.max(0, math.min(360, self.ActorYRotation + 0.35))
-		if(self.ActorYRotation == 360) then
-			self.ActorYRotation = 0
-		end
 
-		local rotation = self.demoActor.transform.rotation
-		local euler = Quaternion.Euler(rotation.eulerAngles.x, self.ActorYRotation, rotation.eulerAngles.z)
-		self.demoActor.transform.rotation = euler
+	self.ActorYRotation = math.max(0, math.min(360, self.ActorYRotation + 0.35))
+	if(self.ActorYRotation == 360) then
+		self.ActorYRotation = 0
 	end
+
+	local rotation = self.demoActor.transform.rotation
+	local euler = Quaternion.Euler(rotation.eulerAngles.x, self.ActorYRotation, rotation.eulerAngles.z)
+	self.demoActor.transform.rotation = euler
 
 	local toSet = {}
 	for key, toValue in pairs(self.updateCameraTo) do
@@ -379,7 +373,7 @@ function FlagViewer:clickedFlag()
 	local color = texData.teamColor or ColorScheme.GetTeamColor(Team.Blue)
 	if(texData ~= self.selectedFlag) then
 		self.framework:setPointMaterial(self.FlagMorpher, self.framework:createOrGetExistingMaterialFromTexture("Flags", texData.texture))
-		ColorScheme.setTeamColor(Team.Blue, Color(color.r, color.g, color.b))
+		self.demoActor.GetComponentInChildren(SkinnedMeshRenderer).material.color = Color(color.r, color.g, color.b)
 		self.selectedFlag = texData
 
 		self.ignoreListener = true
@@ -394,9 +388,21 @@ function FlagViewer:clickedMesh(meshData)
 	if((meshData ~= self.selectedMesh or meshData ~= CurrentEvent.listenerData) and meshData) then
 		self.selectedMesh = meshData
 
-		self.demoActor.RemoveAccessories()
 		if(self.selectedFlag ~= nil) then
-			self.framework:addMeshDataToActor(self.demoActor, self.selectedFlag.texture, self.selectedMesh)			
+			local flagMaterial = self.framework:createOrGetExistingMaterialFromTexture("Flat", self.selectedFlag.texture, nil, 1)
+			local materials = {}
+			for _, material in ipairs(meshData.materials) do
+				if(self.framework:canBeReplacedWithFlagTexture(material)) then
+					table.insert(materials, flagMaterial)
+				else
+					table.insert(materials, material)
+				end
+			end
+
+			self.accessory.SetActive(true)
+			local skMR = self.accessory.GetComponent(SkinnedMeshRenderer)
+			skMR.sharedMesh = meshData.mesh
+			skMR.materials = materials
 		end
 
 		self:updateText()
