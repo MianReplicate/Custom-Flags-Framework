@@ -392,10 +392,9 @@ function MianFlagFramework:addMeshPack(mutatorData)
 		}
 		mutatorTable.meshes = {}
 
-		for _, gameObj in pairs(mutatorData.CustomMeshes) do
-			local renderer = gameObj.GetComponent(SkinnedMeshRenderer)
-			local mesh = renderer.sharedMesh
-			local materials = renderer.materials
+		for _, meshData in pairs(mutatorData.CustomMeshes) do
+			local mesh = meshData.mesh
+			local materials = meshData.materials
 			local name = mesh.name:upper()
 			mesh.name = name
 			
@@ -415,8 +414,7 @@ function MianFlagFramework:addMeshPack(mutatorData)
 			mutatorTable.meshes[nameToUse] = {
 				mesh=mesh,
 				name = nameToUse,
-				materials = materials,
-				gameObject = gameObj
+				materials = materials
 			}
 		end
 		
