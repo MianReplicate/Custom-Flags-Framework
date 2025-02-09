@@ -720,7 +720,7 @@ function MianFlagFramework:Update()
 end
 
 function MianFlagFramework:onMatchEnd(team)
-	if(self.VictoryText and self.VictoryText.activeSelf and self.ChangeTeamNamesToFlagName and team == Player.team) then
+	if(self.VictoryText and self.VictoryText.activeSelf and self.ChangeTeamNamesToFlagName and (Player.team == Team.Neutral or Player.team == nil or team == Player.team)) then
 		local text = self.VictoryText.GetComponent(Text)
 		text.text = GameManager.GetTeamName(team).." VICTORY"
 	end
