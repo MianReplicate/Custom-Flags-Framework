@@ -40,7 +40,12 @@ function list:changeToCategory(categoryNum)
 		end
 		return
 	end
-	self.currentCategory = math.max(1, math.min(categoryNum, self.maxCategory))
+	if(categoryNum > self.maxCategory) then
+		categoryNum = 1
+	elseif(categoryNum <= 0) then
+		categoryNum = self.maxCategory
+	end
+	self.currentCategory = categoryNum
 
 	local start = ((self.currentCategory - 1) * self.showEachCategory) + 1
 	for i = 1, #self.viewables, 1 do
@@ -175,7 +180,7 @@ function FlagViewer:Start()
 
 	self.mutatorList = list.createNewList(self.MutatorList.transform, nil, true)
 	self.defaultList = list.createNewList(self.FlagList.transform, self.CategoryCounter.GetComponentInChildren(Text))
-	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(TextMeshPro))
+	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(Text))
 
 	self.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.defaultList, conditionFunction=self.conditionForMainList})
 	self.Creator.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.creatorList, conditionFunction=self.conditionForCreator})

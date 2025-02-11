@@ -470,7 +470,7 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			mutatorTable.flags[nameToUse] = {
 				texture=texture,
 				name = nameToUse,
-				teamColor=mutatorData.CustomFlagToTeamColors[index],
+				teamColor=mutatorData.CustomFlagToTeamColors[index] or Color(math.random(1, 255)/255, math.random(1, 255)/255, math.random(1, 255)/255, 1),
 				teamName=nameToUse,
 				overrideMaterialColor=nil
 			}
@@ -645,6 +645,7 @@ function MianFlagFramework:Update()
 
 				local results = executeStringList(textures)
 				for _, _name in ipairs(results) do
+					_name = _name:upper()
 					local data = self:getData(self.commandContext.type, _name)
 					if(data) then
 						self:putDataForTeam(team, data)
