@@ -99,7 +99,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.1.0"
+	self.version = "2.1.1"
 	self.gameVersion = "30"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors

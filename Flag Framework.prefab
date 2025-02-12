@@ -60,7 +60,7 @@ MonoBehaviour:
         displayName: <b><color=lightblue>The framework will wait this amount of time
           for other packs to load per added pack. Increase this if packs are not
           being added in time.</color></b>
-        orderPriority: 6
+        orderPriority: 7
       - id: 
         displayName: Paste or type in your configurations in the inputs below! Preferably
           you should use the "Flag Viewer" map to create your output, however if
@@ -92,10 +92,10 @@ MonoBehaviour:
         orderPriority: 30
       - id: 
         displayName: 
-        orderPriority: 4
+        orderPriority: 6
       - id: 
         displayName: 
-        orderPriority: 10
+        orderPriority: 11
       - id: 
         displayName: 
         orderPriority: 15
@@ -104,11 +104,11 @@ MonoBehaviour:
         orderPriority: 25
       - id: 
         displayName: 
-        orderPriority: 8
+        orderPriority: 9
       integers:
       - id: WaitForMutators
         displayName: <color=lightblue>Wait Time (seconds)</color>
-        orderPriority: 7
+        orderPriority: 8
         value: 3
       floats:
       - id: ChanceInGroup
@@ -148,7 +148,7 @@ MonoBehaviour:
         value: 0
       - id: AvoidDupeColors
         displayName: Auto Change Dupe Team Colors
-        orderPriority: 9
+        orderPriority: 10
         value: 1
       - id: FunnyMode
         displayName: funny mode (dont enable this seriously you will kill your eyes)
@@ -156,11 +156,11 @@ MonoBehaviour:
         value: 0
       - id: AvoidDupeData
         displayName: Auto Rename Dupe Data
-        orderPriority: 9
+        orderPriority: 10
         value: 1
       - id: ChangeScoreboardToTeamFlag
         displayName: Change Scoreboard BG to Flag
-        orderPriority: 4
+        orderPriority: 5
         value: 1
       - id: RAApplyTextureVehicles
         displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
