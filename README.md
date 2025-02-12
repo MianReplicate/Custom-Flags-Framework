@@ -26,7 +26,7 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 
 # FAQ
 ### Can I replace textures on my vehicles with flags?
-- Yes! If you rename any materials on your custom vehicle to "FLAG", any bot with a flag assigned to them that drives that vehicle will automatically replace the vehicle's FLAG material textures to the flag texture!
+- Yes! If you rename any materials on your custom vehicle to "CFF_FLAG", any bot with a flag assigned to them that drives that vehicle will automatically replace the vehicle's FLAG material textures to the flag texture!
 
 ### How do bots get assigned flags?
 - When bots spawned, they are usually assigned the flag that the capture point represents. Sometimes however, this is not the case and they are assigned a different flag belonging to the team. If this happens, that bot then encourages bots after it to spawn as that bot's flag. This encourages bots to spawn in groups of assigned flags rather than every single bot having a different flag. Though it does still have a chance of randomizing again which allows for more diversity!
