@@ -78,8 +78,24 @@ local function findArgResults(str)
     return results
 end
 
+local function randomPercentage()
+	return math.random(1, 100) / 100
+end
+
 function MianFlagFramework:canBeReplacedWithFlagTexture(material)
-	return #material.name >= 4 and material.name:sub(1, 4):upper() == "FLAG"
+	local nameLength = #material.name
+	if(nameLength >= 4) then
+		local name
+		if(self.RAApplyTextureVehicles) then
+			name = material.name:sub(1, 4):upper()
+			if(name) == "FLAG" then return true end
+		end
+		
+		if(nameLength >= 8) then
+			name = material.name:sub(1, 8):upper()
+			if(name) == "CFF_FLAG" then return true end
+		end
+	end
 end
 
 function MianFlagFramework:Awake()
@@ -91,13 +107,15 @@ function MianFlagFramework:Awake()
 	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
 	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
 	self.ChangeScoreboardToTeamFlag = self.script.mutator.GetConfigurationBool("ChangeScoreboardToTeamFlag")
-	self.AlwaysRandomizeActorFlag = self.script.mutator.GetConfigurationBool("AlwaysRandomizeActorFlag")
 	self.DefaultWaitTimer = self.script.mutator.GetConfigurationInt("WaitForMutators")
 	self.IgnoreFailedCapturePoint = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
 	self.AlertedUser = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
 	self.AvoidDupeColors = self.script.mutator.GetConfigurationBool("AvoidDupeColors")
 	self.FunnyMode = self.script.mutator.GetConfigurationBool("FunnyMode")
 	self.AvoidDupeData = self.script.mutator.GetConfigurationBool("AvoidDupeData")
+	self.RAApplyTextureVehicles = self.script.mutator.GetConfigurationBool("RAApplyTextureVehicles")
+	self.ChanceInGroup = self.script.mutator.GetConfigurationFloat("ChanceInGroup")
+	self.ChanceFromPoint = self.script.mutator.GetConfigurationFloat("ChanceFromPoint")
 	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
 	self.AssignedMeshes = self.script.mutator.GetConfigurationString("Meshes")
 	self.IsCloth = self.targets.IsCloth
@@ -134,7 +152,12 @@ function MianFlagFramework:Awake()
 	self.TextureForSpawn = {}
 	self.UserLists = {}
 	self.FlagToMeshes = {}
-	self.PlayerData = {}
+	self.PlayerData = {
+		flags = {},
+		meshes = {},
+		flagsArray = {},
+		meshesArray = {}
+	}
 
 	for team, _ in pairs(self.OppositeTeam) do
 		self.TeamToActors[team] = {}
@@ -169,14 +192,16 @@ function MianFlagFramework:Awake()
 				for _, name in ipairs(list) do
 					local data = self:getData("flags", name)
 					if(data) then
-						self.PlayerData[name] = data			
+						self.PlayerData.flags[name] = data
+						table.insert(self.PlayerData.flagsArray, data)
 					end
 				end
 			elseif(operator == "MESHES") then
 				for _, name in ipairs(list) do
 					local data = self:getData("meshes", name)
 					if(data) then
-						self.PlayerData[name] = data			
+						self.PlayerData.meshes[name] = data
+						table.insert(self.PlayerData.meshesArray, data)
 					end
 				end
 			end
@@ -304,7 +329,12 @@ function MianFlagFramework:Awake()
 	}
 
 	for team, _ in pairs(self.TeamToName) do
-		self.TeamToData[team] = {}
+		self.TeamToData[team] = {
+			flags = {},
+			meshes = {},
+			flagsArray = {},
+			meshesArray = {}
+		}
 	end
 
 	for _, actor in ipairs(self.Actors) do
@@ -514,9 +544,13 @@ end
 function MianFlagFramework:getAllNonUsedDatas(type)
 	local givenDatas = self:getDatas(type)
 	for _, datas in pairs(self.TeamToData) do
-		for name, _ in pairs(datas) do
-			if(givenDatas[name]) then
-				givenDatas[name] = nil
+		local dataList = datas[type]
+
+		if(dataList) then
+			for name, _ in pairs(dataList) do
+				if(givenDatas[name]) then
+					givenDatas[name] = nil
+				end
 			end
 		end
 	end
@@ -531,12 +565,14 @@ function MianFlagFramework:putDataForTeam(team, data)
 	local name = data.name:upper()
 	local displayName = self:getNameFlair(data)
 
-	if(self.TeamToData[team][name]) then
+	local type = (data.texture and "flags") or "meshes"
+	if(self.TeamToData[team][type][name]) then
 		self:log(displayName.." was already added into "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright).."!")
 		return
 	end
-
-	self.TeamToData[team][name] = data
+	
+	self.TeamToData[team][type][name] = data
+	table.insert(self.TeamToData[team][type.."Array"], data)
 
 	self:log(displayName.." was added to "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright))
 end
@@ -767,8 +803,8 @@ function MianFlagFramework:onActorSpawn(actor)
 	if(not team) then return end
 	local datas = (actor.isPlayer and self.PlayerData) or self.TeamToData[actor.team]
 
-	local texture = not actor.isPlayer and not self.AlwaysRandomizeActorFlag and math.random(1, 5) <= 4 and self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
-	local willRandomize = actor.isPlayer or texture or math.random(1, 10) > 5 or self.AlwaysRandomizeActorFlag
+	local texture = not actor.isPlayer and randomPercentage() <= self.ChanceInGroup and self.TextureForSpawn[team] and self.TextureForSpawn[team].texture
+	local willRandomize = actor.isPlayer or texture or randomPercentage() <= (1 - self.ChanceFromPoint)
 	if(not texture and not willRandomize) then
 		local closestFlag = nil
 		local closestMagnitude = math.huge
@@ -778,7 +814,7 @@ function MianFlagFramework:onActorSpawn(actor)
 			and capturePoint.flagRenderer 
 			and capturePoint.flagRenderer.material 
 			and capturePoint.flagRenderer.material.mainTexture 
-			and datas[capturePoint.flagRenderer.material.mainTexture.name]) then
+			and datas.flags[capturePoint.flagRenderer.material.mainTexture.name]) then
 				local magnitude = (capturePoint.transform.position - actor.position).magnitude
 				if(magnitude < closestMagnitude) then
 					closestFlag = capturePoint
@@ -793,13 +829,13 @@ function MianFlagFramework:onActorSpawn(actor)
 	end
 
 	if(not texture) then
-		local length = self:getLengthOfDictWithKeyInTable("texture", datas)
+		local length = #datas.flagsArray
 		if(actor.isPlayer and length <= 0) then
 			datas = self.TeamToData[actor.team]
-			length = self:getLengthOfDictWithKeyInTable("texture", datas)
+			length = #datas.flagsArray
 		end
 		if(length > 0) then
-			texture = self:findRandomTableInDictWithKey("texture", datas).texture
+			texture = datas.flagsArray[math.random(1, length)].texture
 			willRandomize = true
 		end
 	end
@@ -812,7 +848,7 @@ function MianFlagFramework:onActorSpawn(actor)
 	end
 
 	-- Accessories handled here
-	local datas = (actor.isPlayer and self:getLengthOfDictWithKeyInTable("mesh", self.PlayerData) > 0 and self.PlayerData) or self.FlagToMeshes
+	datas = (actor.isPlayer and #self.PlayerData.meshesArray > 0) or self.FlagToMeshes
 
 	-- the below is really hacky code used to replace our already added accessories' materials. Preferably we shouldn't do this but like fuck all
 	-- local skinnedMeshRenderers = {}
@@ -840,16 +876,12 @@ function MianFlagFramework:onActorSpawn(actor)
 
 	local randomizationPool = {}
 	if(datas == self.PlayerData) then
-		for _, _datas in pairs(datas) do
-			if(_datas.mesh) then
-				table.insert(randomizationPool, _datas)
-			end
+		for _, data in ipairs(datas.meshesArray) do
+			table.insert(randomizationPool, data)
 		end
 	elseif(texture and datas[texture.name]) then
 		for _, data in ipairs(datas[texture.name]) do
-			if(data.mesh) then
-				table.insert(randomizationPool, data)
-			end
+			table.insert(randomizationPool, data)
 		end
 	end
 
@@ -896,7 +928,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	if(capturePoint.flagRenderer 
 	and capturePoint.flagRenderer.material 
 	and capturePoint.flagRenderer.material.mainTexture 
-	and (datas[capturePoint.flagRenderer.material.mainTexture.name] or (ownerToUse == Player.actor.team and self.PlayerData[capturePoint.flagRenderer.material.mainTexture.name]))) then 
+	and (datas.flags[capturePoint.flagRenderer.material.mainTexture.name] or (ownerToUse == Player.actor.team and self.PlayerData.flags[capturePoint.flagRenderer.material.mainTexture.name]))) then 
 		texture = capturePoint.flagRenderer.material.mainTexture
 	end
 	
@@ -905,7 +937,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		friendlyActor = friendlyActor.squad.leader or friendlyActor
 	end
 
-	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or self:findRandomTableInDictWithKey("texture", datas)
+	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or datas.flagsArray[math.random(1, #datas.flagsArray)]
 
 	if(not texture) then
 		if(self.FinishedAddingPacks and newOwner ~= Team.Neutral) then
@@ -1008,18 +1040,11 @@ end
 function MianFlagFramework:getDatas(type)
 	local datas = {}
 	for _, mutatorPack in pairs(self.MutatorPacks) do
-		if(type) then
-			local givenDatas = mutatorPack[type]
-			if(givenDatas) then
-				for name, data in pairs(givenDatas) do
-					datas[name] = data
-				end
-			end
-		else
-			for _, givenDatas in pairs(mutatorPack) do
-				for name, data in pairs(givenDatas) do
-					datas[name] = data
-				end
+		local toLoop = mutatorPack or (type and mutatorPack[type])
+
+		for _, givenDatas in pairs(toLoop) do
+			for name, data in pairs(givenDatas) do
+				datas[name] = data
 			end
 		end
 	end
@@ -1034,16 +1059,6 @@ function MianFlagFramework:retrieveMutatorsWithType(type)
 		end
 	end
 	return mutatorPacks
-end
-
-function MianFlagFramework:findRandomTableInDictWithKey(key, dict)
-	local add = {}
-	for _, tble in pairs(dict) do
-		if(tble[key]) then
-			table.insert(add, tble)
-		end
-	end
-	return add[math.random(1, #add)]
 end
 
 function MianFlagFramework:findFirstFriendlyActorWithinCapturePoint(capturePoint)
@@ -1086,16 +1101,6 @@ function MianFlagFramework:getRandomKeyFromDict(dict)
 
 	local randomName = names[math.random(1, #names)]
 	return randomName
-end
-
-function MianFlagFramework:getLengthOfDictWithKeyInTable(key, dict)
-	local count = 0
-	for _, tble in pairs(dict) do
-		if(tble[key]) then
-			count = count + 1;
-		end
-	end
-	return count;
 end
 
 function MianFlagFramework:getLengthOfDict(dict)

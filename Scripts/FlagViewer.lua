@@ -559,6 +559,10 @@ function FlagViewer:addToOutput(string)
 	else
 		text = text..string
 	end
+
+	self.creatorEditor.caretPosition = 0
+	self.creatorEditor.selectionAnchorPosition = 0
+	self.creatorEditor.selectionFocusPosition = 0
 	self.Creator.Output.text = text
 end
 

@@ -57,22 +57,68 @@ MonoBehaviour:
     configuration:
       labels:
       - id: 
-        displayName: The framework will wait this amount of time between each added
-          texture to account for mutators loading after the framework. Increase this
-          slightly if log is ranting about textures being added after the registration
-          period.
-        orderPriority: 4
+        displayName: <b><color=lightblue>The framework will wait this amount of time
+          for other packs to load per added pack. Increase this if packs are not
+          being added in time.</color></b>
+        orderPriority: 6
       - id: 
         displayName: Paste or type in your configurations in the inputs below! Preferably
           you should use the "Flag Viewer" map to create your output, however if
           you want, you can also type manually.
         orderPriority: 0
+      - id: 
+        displayName: <b><color=magenta>This will try to apply flag textures to every
+          vehicle that the framework can. If you have issues with textures on vehicles,
+          try disabling this.</color></b>
+        orderPriority: 13
+      - id: 
+        displayName: <color=yellow>This determines how likely it is for an actor
+          to spawn with the same flag as the last actors. This is rolled BEFORE the
+          point chance.</color>
+        orderPriority: 18
+      - id: 
+        displayName: <color=orange>This determines how likely it is for an actor
+          to get their flag from the capture point they spawned at. If this fails,
+          the actor will get a random flag which then creates a group that later
+          actors can spawn as.</color>
+        orderPriority: 20
+      - id: 
+        displayName: <b><color=green>The below are percentage values. The valid range
+          is from 0 to 1 in decimal form. E.g. "0.3" is valid.</color></b>
+        orderPriority: 16
+      - id: 
+        displayName: <b><color=lightblue>The below are values that are misc/can be
+          ignored</color></b>
+        orderPriority: 30
+      - id: 
+        displayName: 
+        orderPriority: 4
+      - id: 
+        displayName: 
+        orderPriority: 10
+      - id: 
+        displayName: 
+        orderPriority: 15
+      - id: 
+        displayName: 
+        orderPriority: 25
+      - id: 
+        displayName: 
+        orderPriority: 8
       integers:
       - id: WaitForMutators
-        displayName: Wait Time for Flag Mutators (seconds)
-        orderPriority: 5
+        displayName: <color=lightblue>Wait Time (seconds)</color>
+        orderPriority: 7
         value: 3
-      floats: []
+      floats:
+      - id: ChanceInGroup
+        displayName: <color=yellow>Actor Spawning With Group Flag</color>
+        orderPriority: 19
+        value: 0.8
+      - id: ChanceFromPoint
+        displayName: <color=orange>Actor Spawning With Point</color>
+        orderPriority: 21
+        value: 0.5
       ranges: []
       strings:
       - id: BlueFlagTextures
@@ -81,49 +127,49 @@ MonoBehaviour:
         value: 
       - id: RedFlagTextures
         displayName: <color=red>Raven Flag(s)</color>
-        orderPriority: 1
+        orderPriority: 2
         value: 
       - id: Meshes
         displayName: <color=green>Accessories</color>
-        orderPriority: 2
+        orderPriority: 3
         value: 
       bools:
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
-        orderPriority: 4
+        orderPriority: 5
         value: 0
       - id: ChangeTeamColorToFlagColor
         displayName: Change Team Color from Flag
-        orderPriority: 4
+        orderPriority: 5
         value: 0
       - id: IgnoreFailedCapturePoint
         displayName: Ignore Non-Changeable Capture Points
-        orderPriority: 6
+        orderPriority: 50
         value: 0
       - id: AvoidDupeColors
         displayName: Auto Change Dupe Team Colors
-        orderPriority: 7
+        orderPriority: 9
         value: 1
       - id: FunnyMode
         displayName: funny mode (dont enable this seriously you will kill your eyes)
-        orderPriority: 11
+        orderPriority: 50
         value: 0
       - id: AvoidDupeData
         displayName: Auto Rename Dupe Data
-        orderPriority: 10
+        orderPriority: 9
         value: 1
       - id: ChangeScoreboardToTeamFlag
         displayName: Change Scoreboard BG to Flag
         orderPriority: 4
         value: 1
-      - id: AlwaysRandomizeActorFlag
-        displayName: Always Randomize Assigned Flag for Actor
-        orderPriority: 12
-        value: 0
+      - id: RAApplyTextureVehicles
+        displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
+        orderPriority: 14
+        value: 1
       dropdowns:
       - id: ExecuteConfigForTeam
         displayName: What Team's Config to Execute First
-        orderPriority: 2
+        orderPriority: 4
         value:
           index: 0
           labels:
