@@ -82,11 +82,11 @@ local function randomPercentage()
 	return math.random(1, 100) / 100
 end
 
-function MianFlagFramework:canBeReplacedWithFlagTexture(material)
+function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	local nameLength = #material.name
 	if(nameLength >= 4) then
 		local name
-		if(self.RAApplyTextureVehicles) then
+		if(self.RAApplyTextureVehicles or allChecks) then
 			name = material.name:sub(1, 4):upper()
 			if(name) == "FLAG" then return true end
 		end
@@ -99,7 +99,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.1.1"
+	self.version = "2.1.3"
 	self.gameVersion = "30"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -261,7 +261,7 @@ function MianFlagFramework:Awake()
 				local success, datas = pcall(self.getDatasFromMutator, self, type, mutatorId)
 				if(success and datas) then
 					for name, _ in pairs(datas) do
-						if(not unusedDatas or unusedDatas[name] or self.commandContext.allowDupes) then
+						if(not unusedDatas or self.commandContext.allowDupes or unusedDatas[name]) then
 							table.insert(names, name)
 						end
 					end
@@ -280,7 +280,7 @@ function MianFlagFramework:Awake()
 			local randomizationPool = {}
 			local unusedDatas = self:getAllNonUsedDatas(self.commandContext.useTypes and self.commandContext.type)
 			for _, name in ipairs(datas) do
-				if(not unusedDatas or unusedDatas[name] or self.commandContext.allowDupes) then
+				if(not unusedDatas or self.commandContext.allowDupes or unusedDatas[name]) then
 					table.insert(randomizationPool, name)
 				end
 			end
@@ -544,9 +544,18 @@ end
 function MianFlagFramework:getAllNonUsedDatas(type)
 	local givenDatas = self:getDatas(type)
 	for _, datas in pairs(self.TeamToData) do
-		local dataList = datas[type]
-
-		if(dataList) then
+		local lists = {}
+		if(not type) then
+			for name, list in pairs(datas) do
+				if(name ~= "flagsArray" and name ~= "meshesArray") then
+					table.insert(lists, list)
+				end
+			end
+		elseif(datas[type]) then
+			table.insert(lists, datas[type])
+		end
+		
+		for _, dataList in ipairs(lists) do
 			for name, _ in pairs(dataList) do
 				if(givenDatas[name]) then
 					givenDatas[name] = nil
@@ -799,6 +808,7 @@ function MianFlagFramework:onVehicleSpawned(vehicle)
 end
 
 function MianFlagFramework:onActorSpawn(actor)
+	self.GameStarted = true
 	local team = actor.team
 	if(not team) then return end
 	local datas = (actor.isPlayer and self.PlayerData) or self.TeamToData[actor.team]
@@ -810,10 +820,10 @@ function MianFlagFramework:onActorSpawn(actor)
 		local closestMagnitude = math.huge
 
 		for _, capturePoint in ipairs(self.Flags) do
-			if(capturePoint.owner == actor.team 
-			and capturePoint.flagRenderer 
-			and capturePoint.flagRenderer.material 
-			and capturePoint.flagRenderer.material.mainTexture 
+			if(capturePoint.owner == actor.team
+			and capturePoint.flagRenderer
+			and capturePoint.flagRenderer.material
+			and capturePoint.flagRenderer.material.mainTexture
 			and datas.flags[capturePoint.flagRenderer.material.mainTexture.name]) then
 				local magnitude = (capturePoint.transform.position - actor.position).magnitude
 				if(magnitude < closestMagnitude) then
@@ -824,7 +834,7 @@ function MianFlagFramework:onActorSpawn(actor)
 		end
 
 		if(closestFlag) then
-			texture = closestFlag.flagRenderer.material.mainTexture			
+			texture = closestFlag.flagRenderer.material.mainTexture
 		end
 	end
 
@@ -848,7 +858,7 @@ function MianFlagFramework:onActorSpawn(actor)
 	end
 
 	-- Accessories handled here
-	datas = (actor.isPlayer and #self.PlayerData.meshesArray > 0) or self.FlagToMeshes
+	datas = (actor.isPlayer and #self.PlayerData.meshesArray > 0 and self.PlayerData) or self.FlagToMeshes
 
 	-- the below is really hacky code used to replace our already added accessories' materials. Preferably we shouldn't do this but like fuck all
 	-- local skinnedMeshRenderers = {}
@@ -906,7 +916,7 @@ function MianFlagFramework:addMeshDataToActor(actor, texture, meshData)
 	local flagMaterial = self:createOrGetExistingMaterialFromTexture("Flat", texture, nil, 1)
 	local materials = {}
 	for _, material in ipairs(meshData.materials) do
-		if(self:canBeReplacedWithFlagTexture(material)) then
+		if(self:canBeReplacedWithFlagTexture(material, true)) then
 			table.insert(materials, flagMaterial)
 		else
 			table.insert(materials, material)
@@ -925,10 +935,10 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	local datas = self.TeamToData[ownerToUse]
 	local texture
 
-	if(capturePoint.flagRenderer 
-	and capturePoint.flagRenderer.material 
-	and capturePoint.flagRenderer.material.mainTexture 
-	and (datas.flags[capturePoint.flagRenderer.material.mainTexture.name] or (ownerToUse == Player.actor.team and self.PlayerData.flags[capturePoint.flagRenderer.material.mainTexture.name]))) then 
+	if(capturePoint.flagRenderer
+	and capturePoint.flagRenderer.material
+	and capturePoint.flagRenderer.material.mainTexture
+	and (datas.flags[capturePoint.flagRenderer.material.mainTexture.name] or (ownerToUse == Player.actor.team and self.PlayerData.flags[capturePoint.flagRenderer.material.mainTexture.name]))) then
 		texture = capturePoint.flagRenderer.material.mainTexture
 	end
 	
@@ -937,7 +947,8 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 		friendlyActor = friendlyActor.squad.leader or friendlyActor
 	end
 
-	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or datas.flagsArray[math.random(1, #datas.flagsArray)]
+	local randomNum = math.random(1, #datas.flagsArray)
+	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or (self.GameStarted and datas.flagsArray[randomNum] and datas.flagsArray[randomNum].texture) or (datas.flagsArray[1] and datas.flagsArray[1].texture)
 
 	if(not texture) then
 		if(self.FinishedAddingPacks and newOwner ~= Team.Neutral) then
@@ -971,6 +982,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 
 		self.TextureForSpawn[capturePoint] = nil
 	end
+	
 	self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", texture))
 end
 
