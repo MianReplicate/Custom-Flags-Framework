@@ -117,10 +117,10 @@ More commands may be added in the future! If you want have a command suggestion,
 Example 1: RUSSIA,Germany,USA,UK
 This assigns Russia, Germany, USA, and the UK flags.
 
-Example 2: RUSSIA,{TEAMCOLOR:{ALL:{ALLMUTATORS}}:255,0,0}
+Example 2: RUSSIA,{TEAMCOLOR:{ALL:{ALLMUTATORS:FLAGS}}:255,0,0}
 This assigns RUSSIA to the team and changes colors of all team colors for every flag to RED.
 
-Example 3: {RANDOMIZE:{ALL:{ALLMUTATORS}}:20}
+Example 3: {RANDOMIZE:{ALL:{ALLMUTATORS:FLAGS}}:20}
 This assigns 20 random flags from all installed flag packs.
 
 Example 4: BRAZIL,CANADA,{ALL:MIANPOLITICALFLAGS}
