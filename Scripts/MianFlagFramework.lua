@@ -82,6 +82,36 @@ local function randomPercentage()
 	return math.random(1, 100) / 100
 end
 
+local function findValue(tble, value)
+	for i, _value in ipairs(tble) do
+		if(_value == value) then
+			return i;
+		end
+	end
+end
+
+local function getRandomKeyFromDict(dict)
+	local names = {}
+	for name, _ in pairs(dict) do
+		table.insert(names, name)
+	end
+
+	local randomName = names[math.random(1, #names)]
+	return randomName
+end
+
+local function getRandomValueFromDict(dict)
+	return dict[getRandomKeyFromDict(dict)]
+end
+
+local function getLengthOfDict(dict)
+	local count = 0
+	for _, _ in pairs(dict) do
+		count = count + 1
+	end
+	return count;
+end
+
 function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	local nameLength = #material.name
 	if(nameLength >= 4) then
@@ -99,7 +129,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.1.3"
+	self.version = "2.2.0"
 	self.gameVersion = "30"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -223,7 +253,7 @@ function MianFlagFramework:Awake()
 			local count
 			local exist = list[1]
 			if(not exist) then
-				count = self:getLengthOfDict(list)
+				count = getLengthOfDict(list)
 			else
 				count = #list
 			end
@@ -245,10 +275,10 @@ function MianFlagFramework:Awake()
 
 			return {finalNum}
 		end,
-		ALLMUTATORS = function(type)
+		ALLMUTATORS = function(type, exclude)
 			type = type[1]:lower() -- either "FLAGS" or "MESHES"
 			local names = {}
-			for name, _ in pairs(self:retrieveMutatorsWithType(type)) do
+			for name, _ in pairs(self:getMutatorsWithType(type, exclude)) do
 				table.insert(names, name)
 			end
 			return names
@@ -603,7 +633,7 @@ function MianFlagFramework:Update()
 			elseif(decision == 1) then
 				firstTeam = Team.Red
 			else
-				firstTeam = self:getRandomKeyFromDict(TeamToName)
+				firstTeam = getRandomKeyFromDict(TeamToName)
 			end
 			local secondTeam = (Team.Blue ~= firstTeam and Team.Blue) or (Team.Red ~= firstTeam and Team.Red)
 			TeamToName = {
@@ -737,14 +767,18 @@ function MianFlagFramework:Update()
 						teamPanelImage.color = color
 					end
 
-					for _, capturePoint in pairs(self.Flags) do
-						if(capturePoint.owner == team) then
-							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", firstTexData.texture, firstTexData.overrideMaterialColor))
-						end
-					end
-
 					self.TextureForSpawn[team] = {texture=firstTexData.texture}
 				end
+
+				for _, capturePoint in pairs(self.Flags) do
+					if(capturePoint.owner == team) then
+						local texData = self:getAndIncrementRunnerUp(team)
+						if(texData) then
+							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", texData.texture, texData.overrideMaterialColor))
+						end
+					end
+				end
+
 
 				lastTeam = true
 			end
@@ -763,6 +797,27 @@ function MianFlagFramework:Update()
 			end
 		end
 	end
+end
+
+function MianFlagFramework:getRunnerUp(team)
+	local name = self.TeamToName[team]
+	self["runnerUp"..name] = self["runnerUp"..name] or 1
+	local runnerUp = self["runnerUp"..name]
+	local texData = self.TeamToData[team].flagsArray[runnerUp]
+
+	return texData
+end
+
+function MianFlagFramework:getAndIncrementRunnerUp(team)
+	local name = self.TeamToName[team]
+	local runnerUp = self:getRunnerUp(team)
+	local num = self["runnerUp"..name]
+	num = num + 1
+	if(num > #self.TeamToData[team].flagsArray) then
+		num = 1
+	end
+	self["runnerUp"..name] = num
+	return runnerUp
 end
 
 function MianFlagFramework:onMatchEnd(team)
@@ -948,11 +1003,13 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	end
 
 	local randomNum = math.random(1, #datas.flagsArray)
-	texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or (self.GameStarted and datas.flagsArray[randomNum] and datas.flagsArray[randomNum].texture) or (datas.flagsArray[1] and datas.flagsArray[1].texture)
+	if(ownerToUse ~= Team.Neutral) then
+		texture = texture or (friendlyActor and self.ActorsToTexture[friendlyActor]) or (self.GameStarted and datas.flagsArray[randomNum] and datas.flagsArray[randomNum].texture) or (self:getRunnerUp(ownerToUse) and self:getAndIncrementRunnerUp(ownerToUse).texture)		
+	end
 
 	if(not texture) then
-		if(self.FinishedAddingPacks and newOwner ~= Team.Neutral) then
-			self:log("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT") 			
+		if(self.FinishedAddingPacks and ownerToUse ~= Team.Neutral) then
+			self:debug("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT")
 		end
 		if(capturePoint.flagRenderer ~= nil) then
 			capturePoint.flagRenderer.material.SetTexture("_MainTex", nil)
@@ -1063,10 +1120,10 @@ function MianFlagFramework:getDatas(type)
 	return datas
 end
 
-function MianFlagFramework:retrieveMutatorsWithType(type)
+function MianFlagFramework:getMutatorsWithType(type, exclude)
 	local mutatorPacks = {}
 	for name, mutatorPack in pairs(self.MutatorPacks) do
-		if(mutatorPack[type]) then
+		if(mutatorPack[type] and (not exclude or (exclude and not findValue(exclude, name)))) then
 			mutatorPacks[name] = mutatorPack
 		end
 	end
@@ -1093,40 +1150,16 @@ function MianFlagFramework:onPendingOwnerChanged()
 	self:autoSetPointMaterial(CurrentEvent.listenerData)
 end
 
-function MianFlagFramework:isInArray(tble, value)
-	for i, _value in ipairs(tble) do
-		if(_value == value) then
-			return i;
-		end
-	end
-end
-
-function MianFlagFramework:getRandomValueFromDict(dict)
-	return dict[self:getRandomKeyFromDict(dict)]
-end
-
-function MianFlagFramework:getRandomKeyFromDict(dict)
-	local names = {}
-	for name, _ in pairs(dict) do
-		table.insert(names, name)
-	end
-
-	local randomName = names[math.random(1, #names)]
-	return randomName
-end
-
-function MianFlagFramework:getLengthOfDict(dict)
-	local count = 0
-	for _, _ in pairs(dict) do
-		count = count + 1
-	end
-	return count;
-end
-
 function MianFlagFramework:getNameFlair(data)
 	if(not data) then return "" end
 	local colorToUse = data.teamColor or Color(1, 1, 1)
 	return ColorScheme.RichTextColorTag(Color(colorToUse.r, colorToUse.g, colorToUse.b))..data.name.."</color>"
+end
+
+function MianFlagFramework:debug(...)
+	if(self.isTestingContentMod) then
+		self:log(...)
+	end
 end
 
 function MianFlagFramework:log(...)

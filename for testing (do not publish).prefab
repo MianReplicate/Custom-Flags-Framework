@@ -1,0 +1,240 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1450327976445928608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5222062321539068418}
+  - component: {fileID: 6726400015927089120}
+  m_Layer: 0
+  m_Name: for testing (do not publish)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5222062321539068418
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children:
+  - {fileID: 2259278910373322968}
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6726400015927089120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec3b8824308adc64fb1901cef109132a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mutators:
+  - name: Custom Flags Framework
+    description: A framework that is used to replace vanilla flag designs with your
+      own!
+    menuImage: {fileID: 2800000, guid: d3c14ea8963856f4da6a3b57ef709510, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608, guid: 94a03a7ecbbadc240a8a752cc27b838a, type: 3}
+    configuration:
+      labels:
+      - id: 
+        displayName: <b><color=lightblue>The framework will wait this amount of time
+          for other packs to load per added pack. Increase this if packs are not
+          being added in time.</color></b>
+        orderPriority: 7
+      - id: 
+        displayName: Paste or type in your configurations in the inputs below! Preferably
+          you should use the "Flag Viewer" map to create your output, however if
+          you want, you can also type manually.
+        orderPriority: 0
+      - id: 
+        displayName: <b><color=magenta>This will try to apply flag textures to every
+          vehicle that the framework can. If you have issues with textures on vehicles,
+          try disabling this.</color></b>
+        orderPriority: 13
+      - id: 
+        displayName: <color=yellow>This determines how likely it is for an actor
+          to spawn with the same flag as the last actors. This is rolled BEFORE the
+          point chance.</color>
+        orderPriority: 18
+      - id: 
+        displayName: <color=orange>This determines how likely it is for an actor
+          to get their flag from the capture point they spawned at. If this fails,
+          the actor will get a random flag which then creates a group that later
+          actors can spawn as.</color>
+        orderPriority: 20
+      - id: 
+        displayName: <b><color=green>The below are percentage values. The valid range
+          is from 0 to 1 in decimal form. E.g. "0.3" is valid.</color></b>
+        orderPriority: 16
+      - id: 
+        displayName: <b><color=lightblue>The below are values that are misc/can be
+          ignored</color></b>
+        orderPriority: 30
+      - id: 
+        displayName: 
+        orderPriority: 6
+      - id: 
+        displayName: 
+        orderPriority: 11
+      - id: 
+        displayName: 
+        orderPriority: 15
+      - id: 
+        displayName: 
+        orderPriority: 25
+      - id: 
+        displayName: 
+        orderPriority: 9
+      integers:
+      - id: WaitForMutators
+        displayName: <color=lightblue>Wait Time (seconds)</color>
+        orderPriority: 8
+        value: 3
+      floats:
+      - id: ChanceInGroup
+        displayName: <color=yellow>Actor Spawning With Group Flag</color>
+        orderPriority: 19
+        value: 0.8
+      - id: ChanceFromPoint
+        displayName: <color=orange>Actor Spawning With Point</color>
+        orderPriority: 21
+        value: 0.5
+      ranges: []
+      strings:
+      - id: BlueFlagTextures
+        displayName: <color=blue>Eagle Flag(s)</color>
+        orderPriority: 1
+        value: 
+      - id: RedFlagTextures
+        displayName: <color=red>Raven Flag(s)</color>
+        orderPriority: 2
+        value: 
+      - id: Meshes
+        displayName: <color=green>Accessories</color>
+        orderPriority: 3
+        value: 
+      bools:
+      - id: ChangeTeamNamesToFlagName
+        displayName: Change Team Names to Flag Names
+        orderPriority: 5
+        value: 0
+      - id: ChangeTeamColorToFlagColor
+        displayName: Change Team Color from Flag
+        orderPriority: 5
+        value: 0
+      - id: IgnoreFailedCapturePoint
+        displayName: Ignore Non-Changeable Capture Points
+        orderPriority: 50
+        value: 0
+      - id: AvoidDupeColors
+        displayName: Auto Change Dupe Team Colors
+        orderPriority: 10
+        value: 1
+      - id: FunnyMode
+        displayName: funny mode (dont enable this seriously you will kill your eyes)
+        orderPriority: 50
+        value: 0
+      - id: AvoidDupeData
+        displayName: Auto Rename Dupe Data
+        orderPriority: 10
+        value: 1
+      - id: ChangeScoreboardToTeamFlag
+        displayName: Change Scoreboard BG to Flag
+        orderPriority: 5
+        value: 1
+      - id: RAApplyTextureVehicles
+        displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
+        orderPriority: 14
+        value: 1
+      dropdowns:
+      - id: ExecuteConfigForTeam
+        displayName: What Team's Config to Execute First
+        orderPriority: 4
+        value:
+          index: 0
+          labels:
+          - <color=blue>EAGLE</color>
+          - <color=red>RAVEN</color>
+          - <color=#fc0fc0>RANDOMIZE</color>
+  - name: Pride Flags
+    description: 'Show off your queerness in war :sunglasses:'
+    menuImage: {fileID: 2800000, guid: 317debf1bf290ab4dbd3f754982f8024, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608, guid: abc686e5a614c694faae522db624df95, type: 3}
+    configuration:
+      labels: []
+      integers: []
+      floats: []
+      ranges: []
+      strings: []
+      bools: []
+      dropdowns: []
+  - name: Flag Accessories
+    description: Show off your flags WITH style!
+    menuImage: {fileID: 2800000, guid: 47cd02de009e8a244b7702e20e94925a, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608, guid: eb2c37b771b2b3b4db6d70be9b44899d, type: 3}
+    configuration:
+      labels: []
+      integers: []
+      floats: []
+      ranges: []
+      strings: []
+      bools: []
+      dropdowns: []
+  - name: Political Flags
+    description: Fight 'em politics!
+    menuImage: {fileID: 2800000, guid: b9024af99bad7d24293bad612f19358f, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608, guid: 806f304d11794384dbf74918f594ac64, type: 3}
+    configuration:
+      labels: []
+      integers: []
+      floats: []
+      ranges: []
+      strings: []
+      bools: []
+      dropdowns: []
+--- !u!1 &1799220026407893892
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2259278910373322968}
+  m_Layer: 0
+  m_Name: IsCloth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &2259278910373322968
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1799220026407893892}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 5222062321539068418}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
