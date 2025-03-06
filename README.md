@@ -38,8 +38,8 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 ### How to create my own flag/accessory packs?
 
 - There are two methods you can use to create your own flag packs (Only one for accessory packs).
-- Simple but more memory consumption, less customizable method, and not publishable to workshop: [Local Flags](https://github.com/MianReplicate/Local-Flags)
-- Advanced, more memory efficient, more customization, ability to publish to workshop, and allows for accessory packs as well: [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/TEMPLATE-INFO.md)
+- Simple, slightly less memory efficient, and not publishable to workshop: [Local Flags](https://github.com/MianReplicate/Local-Flags)
+- Advanced, more memory efficient, ability to publish to workshop, and allows for accessory packs as well: [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/TEMPLATE-INFO.md)
 
 # Credits
 Special thanks to Wingnut for letting me use their WIP vehicles for testing out the new Pride Update involving extending flag textures to vehicles.
