@@ -4,7 +4,7 @@
 
 # How to Add Flags/Meshes to Teams
 
-If you are adding flags, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
+If you are adding flags, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, move on to the next set of instructions: "Assigning by Name".
 
 If you are adding meshes, please learn how to add flags already if you haven't. This will be important because you will have to learn how to use commands to add meshes in this next part. If you are too lazy to learn, read the paragraph below this. Otherwise start up the "Flag Viewer" map and find your meshes. Then follow "Assigning by Commands" and learn the command syntax. Afterwards, read up on the "ACCESSORY" command in "More Information on Commands". You will be using this command within the "ACCESSORY" output to assign accessories to flags.
 
