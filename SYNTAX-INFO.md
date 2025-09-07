@@ -4,7 +4,7 @@
 
 # How to Add Flags/Meshes to Teams
 
-If you are adding flags, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, read the following instructions.
+If you are adding flags, first start up the "Flag Viewer" map. Then press A once you've loaded in. Afterwards, move on to the next set of instructions: "Assigning by Name".
 
 If you are adding meshes, please learn how to add flags already if you haven't. This will be important because you will have to learn how to use commands to add meshes in this next part. If you are too lazy to learn, read the paragraph below this. Otherwise start up the "Flag Viewer" map and find your meshes. Then follow "Assigning by Commands" and learn the command syntax. Afterwards, read up on the "ACCESSORY" command in "More Information on Commands". You will be using this command within the "ACCESSORY" output to assign accessories to flags.
 
@@ -39,6 +39,7 @@ Next, you want to press the MUTATORS button at the top to swap over to a list of
 Congralutations! You've successfully completed your first command. This will add all the flags from the flag pack to a select team. Note that every argument is treated as a list so you can add as MANY of a specific datatype as you want into an argument. E.g. since ALL takes a MUTATOR input, you can add MULTIPLE mutators and ALL will grab the flags from ALL of them. Here's a visualization of what this might look like:
 
 Assigning by Name: "Russia,Germany,USA,UK,Turkey,North Korea,South Korea"
+
 Assigning by Command: {ALL:MIANPOLITICALFLAGS} -> OUTPUTS "Russia,Germany,USA,UK,Turkey,North Korea,South Korea"
 
 See how much easier it is to add in all your flags because of the "ALL" command?
