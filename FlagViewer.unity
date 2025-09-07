@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.3043947, g: 0.57049274, b: 0.68997264, a: 1}
+  m_IndirectSpecularColor: {r: 0.30439597, g: 0.570495, b: 0.6899749, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -5412,6 +5412,23 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 1147768285542554, guid: 99aafae000055a446be1f5dab4345da5, type: 3}
   m_PrefabInstance: {fileID: 211682493}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1228644273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228644272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ad06d0d4f582d045a9a8d5a77808145, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defenderMainBase: {fileID: 0}
+  defenderBase2: {fileID: 0}
+  defenderBase3: {fileID: 0}
+  attackerBase: {fileID: 0}
+  kingOfTheHillBase: {fileID: 0}
 --- !u!114 &1228644274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5599,6 +5616,34 @@ MonoBehaviour:
   repeatType: 1
   scriptedBehaviour: {fileID: 1228644278}
   functionName: cameraLeft
+--- !u!114 &1228644281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228644272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cd6d4dac3ee1bb4dad976cdd62107e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameModeName: Custom Flags Viewer
+  loadoutType: 1
+  scoreboardType: 2
+  canConfigureFlags: 0
+  canContinuePlayingAfterGameEnd: 1
+  autoOpenLoadoutOnStart: 0
+  testConfiguration:
+    checkpoint: 0
+  instantActionGameConfig: 0
+  instantActionMutatorConfig: 0
+  playerTeam: 1
+  canCaptureFlagsByDefault: 0
+  spawnVehicles: 0
+  spawnTurrets: 0
+  generateAISquadOrders: 0
+  triggerDebugLevel: 2
 --- !u!1 &1244949372
 GameObject:
   m_ObjectHideFlags: 0
@@ -7170,25 +7215,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 1629075374}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7cd6d4dac3ee1bb4dad976cdd62107e0, type: 3}
+  m_Script: {fileID: 11500000, guid: 218ca5237c3fe494781b9bc9fce8b4c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameModeName: Custom Flags Viewer
-  loadoutType: 1
-  scoreboardType: 2
-  canConfigureFlags: 0
-  canContinuePlayingAfterGameEnd: 1
-  autoOpenLoadoutOnStart: 0
-  testConfiguration:
-    checkpoint: 0
-  instantActionGameConfig: 1
-  instantActionMutatorConfig: 0
-  playerTeam: 1
-  canCaptureFlagsByDefault: 0
-  spawnVehicles: 0
-  spawnTurrets: 0
-  generateAISquadOrders: 0
-  triggerDebugLevel: 2
+  neighbors:
+  - a: {fileID: 0}
+    b: {fileID: 0}
+    landConnection: 1
+    waterConnection: 0
+    oneWay: 0
+  - a: {fileID: 0}
+    b: {fileID: 0}
+    landConnection: 1
+    waterConnection: 0
+    oneWay: 0
+  - a: {fileID: 0}
+    b: {fileID: 0}
+    landConnection: 1
+    waterConnection: 0
+    oneWay: 0
 --- !u!1 &1643911744
 GameObject:
   m_ObjectHideFlags: 0
@@ -8974,7 +9019,9 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 114357195857687926, guid: 336ee7fa2195fad46b3ffd8183402e74, type: 3}
+    - {fileID: 114102808254381200, guid: 336ee7fa2195fad46b3ffd8183402e74, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 336ee7fa2195fad46b3ffd8183402e74, type: 3}
 --- !u!1 &2056583303
 GameObject:
