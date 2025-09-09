@@ -128,18 +128,6 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	end
 end
 
--- This shows all the textures for one team
-local TeamToName = {
-	[Team.Blue] = "Blue",
-	[Team.Red] = "Red", 
-	[Team.Neutral] = "Neutral"
-}
-
-local OppositeTeam = {
-	[Team.Blue] = Team.Red,
-	[Team.Red] = Team.Blue
-}
-
 function MianFlagFramework:Awake()
 	self.version = "2.2.0"
 	self.gameVersion = "30"
@@ -189,7 +177,18 @@ function MianFlagFramework:Awake()
 		meshesArray = {}
 	}
 
-	for team, _ in pairs(OppositeTeam) do
+	self.TeamToName = {
+		[Team.Blue] = "Blue",
+		[Team.Red] = "Red", 
+		[Team.Neutral] = "Neutral"
+	}
+
+	self.OppositeTeam = {
+		[Team.Blue] = Team.Red,
+		[Team.Red] = Team.Blue
+	}
+
+	for team, _ in pairs(self.OppositeTeam) do
 		self.TeamToActors[team] = {}
 	end
 
@@ -358,7 +357,7 @@ function MianFlagFramework:Awake()
 		end
 	}
 
-	for team, _ in pairs(TeamToName) do
+	for team, _ in pairs(self.TeamToName) do
 		self.TeamToData[team] = {
 			flags = {},
 			meshes = {},
@@ -513,7 +512,6 @@ function MianFlagFramework:addFlagPack(mutatorData)
 		mutatorTable.flags = {}
 
 		for index, texture in pairs(mutatorData.CustomFlags) do
-			self:debug("Initial texture name: "..texture.name)
 			texture.name = texture.name:upper()
 			local nameToUse = texture.name
 			local alreadyExists = self:getData(nameToUse)
@@ -608,14 +606,14 @@ function MianFlagFramework:putDataForTeam(team, data)
 
 	local type = (data.texture and "flags") or "meshes"
 	if(self.TeamToData[team][type][name]) then
-		self:log(displayName.." was already added into "..ColorScheme.FormatTeamColor(TeamToName[team], team, ColorVariant.Bright).."!")
+		self:log(displayName.." was already added into "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright).."!")
 		return
 	end
 	
 	self.TeamToData[team][type][name] = data
 	table.insert(self.TeamToData[team][type.."Array"], data)
 
-	self:log(displayName.." was added to "..ColorScheme.FormatTeamColor(TeamToName[team], team, ColorVariant.Bright))
+	self:log(displayName.." was added to "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright))
 end
 
 function MianFlagFramework:Update()
@@ -626,7 +624,7 @@ function MianFlagFramework:Update()
 			self.FinishedAddingPacks = true
 
 			self:log("All packs seem to have been added: Starting framework version "..self.version)
-			local TeamToName = TeamToName
+			local TeamToName = self.TeamToName
 			TeamToName[Team.Neutral] = nil
 			local decision = self.ExecuteConfigForTeam
 			local firstTeam
@@ -747,7 +745,7 @@ function MianFlagFramework:Update()
 					if(self.ChangeTeamColorToFlagColor) then
 						local color = firstTexData.teamColor or ColorScheme.GetTeamColor(team)
 						if(lastTeam) then
-							local otherTeamColor = ColorScheme.GetTeamColor(OppositeTeam[team])
+							local otherTeamColor = ColorScheme.GetTeamColor(self.OppositeTeam[team])
 							if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b and self.AvoidDupeColors) then
 								color.r = math.random(0, 255) / 255
 								color.g = math.random(0, 255) / 255
@@ -763,9 +761,9 @@ function MianFlagFramework:Update()
 
 					if(self.ChangeScoreboardToTeamFlag) then
 						local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific).GetComponent(Image)
-						local a = teamPanelImage.color.a
+						-- local a = teamPanelImage.color.a
 						teamPanelImage.material = self:createOrGetExistingMaterialFromTexture("UI", firstTexData.texture, nil, 1, teamPanelImage.material)
-						local color = Color(0.6, 0.6, 0.6, a)
+						local color = Color(0.6, 0.6, 0.6, 0.5)
 						teamPanelImage.color = color
 					end
 
@@ -802,7 +800,7 @@ function MianFlagFramework:Update()
 end
 
 function MianFlagFramework:getRunnerUp(team)
-	local name = TeamToName[team]
+	local name = self.TeamToName[team]
 	self["runnerUp"..name] = self["runnerUp"..name] or 1
 	local runnerUp = self["runnerUp"..name]
 	local texData = self.TeamToData[team].flagsArray[runnerUp]
@@ -811,7 +809,7 @@ function MianFlagFramework:getRunnerUp(team)
 end
 
 function MianFlagFramework:getAndIncrementRunnerUp(team)
-	local name = TeamToName[team]
+	local name = self.TeamToName[team]
 	local runnerUp = self:getRunnerUp(team)
 	local num = self["runnerUp"..name]
 	num = num + 1
@@ -1014,7 +1012,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 
 	if(not texture) then
 		if(self.FinishedAddingPacks and ownerToUse ~= Team.Neutral) then
-			self:debug("No textures to use for "..ColorScheme.FormatTeamColor(TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT")
+			self:debug("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT")
 		end
 		if(capturePoint.flagRenderer ~= nil) then
 			capturePoint.flagRenderer.material.SetTexture("_MainTex", nil)
