@@ -129,7 +129,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.2.1"
+	self.version = "2.2.2"
 	self.gameVersion = "30"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -483,7 +483,7 @@ function MianFlagFramework:addMeshPack(mutatorData)
 				materials = materials
 			}
 			mutatorTable.meshes[nameToUse] = meshGroup
-			self:cacheData("meshes", nameToUse, flagGroup)
+			self:cacheData("meshes", nameToUse, meshGroup)
 		end
 		
 		self.MutatorPacks[name] = mutatorTable
