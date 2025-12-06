@@ -166,6 +166,10 @@ MonoBehaviour:
         displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
         orderPriority: 14
         value: 1
+      - id: DebugMode
+        displayName: Debug Mode
+        orderPriority: 50
+        value: 0
       dropdowns:
       - id: ExecuteConfigForTeam
         displayName: What Team's Config to Execute First

@@ -129,7 +129,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.2.0"
+	self.version = "2.2.1"
 	self.gameVersion = "30"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -148,6 +148,7 @@ function MianFlagFramework:Awake()
 	self.ChanceFromPoint = self.script.mutator.GetConfigurationFloat("ChanceFromPoint")
 	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
 	self.AssignedMeshes = self.script.mutator.GetConfigurationString("Meshes")
+	self.DebugMode = self.script.mutator.GetConfigurationBool("DebugMode")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
 	self.WaitTimer = self.DefaultWaitTimer
@@ -159,6 +160,11 @@ function MianFlagFramework:Awake()
 	self.TeamToData = {}
 	-- Mutator -> metadata, meshes, flags
 	self.MutatorPacks = {}
+	self.CachedGroups = {
+		meshes = {},
+		flags = {},
+		combined = {},
+	}
 	self.CachedTextureToMaterials = {}
 
 	-- Actors are assigned datas
@@ -470,18 +476,21 @@ function MianFlagFramework:addMeshPack(mutatorData)
 				nameToUse = testName
 			end
 			mesh.name = nameToUse
-			mutatorTable.meshes[nameToUse] = {
+
+			local meshGroup = {
 				mesh=mesh,
 				name = nameToUse,
 				materials = materials
 			}
+			mutatorTable.meshes[nameToUse] = meshGroup
+			self:cacheData("meshes", nameToUse, flagGroup)
 		end
 		
 		self.MutatorPacks[name] = mutatorTable
 	end)
 
 	if(success) then
-		self:log("Added new pack: "..name)
+		self:debug("Added new pack: "..name)
 	else
 		self:log("Failed to load pack: "..name)
 		self:log("<color=red>Error: "..errormsg.."</color>")
@@ -527,20 +536,22 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			end
 			self:debug("Adding flag texture: "..nameToUse)
 			texture.name = nameToUse
-			mutatorTable.flags[nameToUse] = {
+			local flagGroup = {
 				texture=texture,
 				name = nameToUse,
 				teamColor=mutatorData.CustomFlagToTeamColors[index] or Color(math.random(1, 255)/255, math.random(1, 255)/255, math.random(1, 255)/255, 1),
 				teamName=nameToUse,
 				overrideMaterialColor=nil
 			}
+			mutatorTable.flags[nameToUse] = flagGroup
+			self:cacheData("flags", nameToUse, flagGroup)
 		end
 		
 		self.MutatorPacks[name] = mutatorTable
 	end)
 
 	if(success) then
-		self:log("Added new pack: "..name)
+		self:debug("Added new pack: "..name)
 	else
 		self:log("Failed to load pack: "..name)
 		self:log("Error: "..errormsg)
@@ -613,7 +624,7 @@ function MianFlagFramework:putDataForTeam(team, data)
 	self.TeamToData[team][type][name] = data
 	table.insert(self.TeamToData[team][type.."Array"], data)
 
-	self:log(displayName.." was added to "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright))
+	self:debug(displayName.." was added to "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright))
 end
 
 function MianFlagFramework:Update()
@@ -1100,27 +1111,17 @@ function MianFlagFramework:getData(type, name)
 		type = nil
 	end
 
-	for _name, data in pairs(self:getDatas(type)) do
-		if(_name == name) then
-			return data
-		end
-	end
-
-	return nil
+	return self:getDatas(type)[name]
 end
 
 function MianFlagFramework:getDatas(type)
-	local datas = {}
-	for _, mutatorPack in pairs(self.MutatorPacks) do
-		local toLoop = mutatorPack or (type and mutatorPack[type])
+	type = type or "combined"
+	return self.CachedGroups[type]
+end
 
-		for _, givenDatas in pairs(toLoop) do
-			for name, data in pairs(givenDatas) do
-				datas[name] = data
-			end
-		end
-	end
-	return datas
+function MianFlagFramework:cacheData(type, name, group)
+	self.CachedGroups[type][name] = group
+	self.CachedGroups.combined[name] = group
 end
 
 function MianFlagFramework:getMutatorsWithType(type, exclude)
@@ -1160,7 +1161,7 @@ function MianFlagFramework:getNameFlair(data)
 end
 
 function MianFlagFramework:debug(...)
-	if(GameManager.isTestingContentMod) then
+	if(self.DebugMode) then
 		self:log(...)
 	end
 end

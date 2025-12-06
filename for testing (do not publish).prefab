@@ -162,6 +162,10 @@ MonoBehaviour:
         displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
         orderPriority: 14
         value: 1
+      - id: DebugMode
+        displayName: Debug Mode
+        orderPriority: 50
+        value: 1
       dropdowns:
       - id: ExecuteConfigForTeam
         displayName: What Team's Config to Execute First
@@ -188,6 +192,18 @@ MonoBehaviour:
     description: Fight 'em politics!
     menuImage: {fileID: 2800000, guid: b9024af99bad7d24293bad612f19358f, type: 3}
     mutatorPrefab: {fileID: 1450327976445928608, guid: 806f304d11794384dbf74918f594ac64, type: 3}
+    configuration:
+      labels: []
+      integers: []
+      floats: []
+      ranges: []
+      strings: []
+      bools: []
+      dropdowns: []
+  - name: Pride Flags
+    description: 'Show off your queerness in war :sunglasses:'
+    menuImage: {fileID: 2800000, guid: 317debf1bf290ab4dbd3f754982f8024, type: 3}
+    mutatorPrefab: {fileID: 1450327976445928608, guid: abc686e5a614c694faae522db624df95, type: 3}
     configuration:
       labels: []
       integers: []
