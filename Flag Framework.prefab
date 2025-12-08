@@ -133,6 +133,10 @@ MonoBehaviour:
         displayName: <color=green>Accessories</color>
         orderPriority: 3
         value: 
+      - id: Voices
+        displayName: <color=purple>Team Voices</color>
+        orderPriority: 3
+        value: 
       bools:
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names

@@ -148,6 +148,7 @@ function MianFlagFramework:Awake()
 	self.ChanceFromPoint = self.script.mutator.GetConfigurationFloat("ChanceFromPoint")
 	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
 	self.AssignedMeshes = self.script.mutator.GetConfigurationString("Meshes")
+	self.AssignedVoices = self.script.mutator.GetConfigurationString("Voices")
 	self.DebugMode = self.script.mutator.GetConfigurationBool("DebugMode")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
@@ -176,6 +177,7 @@ function MianFlagFramework:Awake()
 	self.TextureForSpawn = {}
 	self.UserLists = {}
 	self.FlagToMeshes = {}
+	self.FlagToVoices = {}
 	self.PlayerData = {
 		flags = {},
 		meshes = {},
@@ -194,6 +196,10 @@ function MianFlagFramework:Awake()
 		[Team.Red] = Team.Blue
 	}
 
+	self.TeamVoiceMutators = {
+
+	}
+
 	for team, _ in pairs(self.OppositeTeam) do
 		self.TeamToActors[team] = {}
 	end
@@ -202,7 +208,16 @@ function MianFlagFramework:Awake()
 		type = nil,
 		allowDupes = false
 	}
+
 	self.runnableStringCommands = {
+		VOICE = function(flags, voices)
+			if(self.commandContext.type ~= "voices") then return end
+			if(#voices <= 0) then self:log("No voices given for flags to use") return end
+			if(#voices > 1) then self:log("Cannot assign more than one voice to a flag") return end
+			for _, flag in ipairs(flags) do
+				self.FlagToVoices[flag:upper()] = voices[1]
+			end
+		end,
 		ACCESSORY = function(flags, meshes)
 			if(self.commandContext.type ~= "meshes") then return end
 
@@ -383,6 +398,25 @@ function MianFlagFramework:Start()
 	for _, capturePoint in ipairs(self.Flags) do
 		self:autoSetPointMaterial(capturePoint)
 		self.script.AddValueMonitor("pendingOwner", "onPendingOwnerChanged", capturePoint)
+	end
+
+	local searchForTeamVoiceMutators = {
+		"TeamVoicesMutator(Eagle)(Clone)",
+		"TeamVoicesMutator(Raven)(Clone)"
+	}
+
+	for _, name in ipairs(searchForTeamVoiceMutators) do
+		local obj = self.gameObject.Find(name)
+		if(obj ~= nil) then
+			local component = obj.GetComponent(ScriptedBehaviour)
+			if(component.self.AddActorOverride ~= nil) then
+				table.insert(self.TeamVoiceMutators, component)	
+			end
+		end
+	end
+
+	if(#self.TeamVoiceMutators > 0) then
+		self:log("Detected Team Voices!")
 	end
 
 	GameEvents.onCapturePointCaptured.AddListener(self,"autoSetPointMaterial")
@@ -720,6 +754,13 @@ function MianFlagFramework:Update()
 			}
 			executeStringList(self.AssignedMeshes)
 
+			self.commandContext = {
+				type = "voices",
+				allowDupes = true
+			}
+			executeStringList(self.AssignedVoices)
+
+			-- Indexes will still work with enums, so do not worry about team
 			for team, name in pairs(TeamToName) do
 				local textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
 				local texDatas = {}
@@ -842,7 +883,7 @@ function MianFlagFramework:onDriverChanged()
 	local vehicle = CurrentEvent.listenerData
 	local driver = vehicle.driver
 
-	local meshRenderers = {} 
+	local meshRenderers = {}
 	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
 		table.insert(meshRenderers, renderer)
 	end
@@ -923,31 +964,18 @@ function MianFlagFramework:onActorSpawn(actor)
 		end
 	end
 
+	datas = self.FlagToVoices
+	local voicePack = texture and datas[texture.name]
+	if(voicePack) then
+		self:debug("Assigning " ..voicePack.. " to " ..actor.name)
+		for _, component in ipairs(self.TeamVoiceMutators) do
+			component.self:AddActorOverride(actor, voicePack)
+		end
+	end
+
 	-- Accessories handled here
 	datas = (actor.isPlayer and #self.PlayerData.meshesArray > 0 and self.PlayerData) or self.FlagToMeshes
 
-	-- the below is really hacky code used to replace our already added accessories' materials. Preferably we shouldn't do this but like fuck all
-	-- local skinnedMeshRenderers = {}
-	-- for _, meshRenderer in ipairs(actor.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
-	-- 	table.insert(skinnedMeshRenderers, meshRenderer)
-	-- end
-	-- for _, meshRenderer in ipairs(actor.transform.Find("Soldier Ragdoll").gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
-	-- 	table.insert(skinnedMeshRenderers, meshRenderer)
-	-- end
-
-	-- local found = false
-	-- for _, meshRenderer in ipairs(skinnedMeshRenderers) do
-	-- 	for _, data in pairs(datas) do
-	-- 		if(meshRenderer.sharedMesh == data.mesh) then
-	-- 			meshRenderer.material = self:createOrGetExistingMaterialFromTexture("Meshes", texture, nil, 1)
-	-- 			found = true
-	-- 			break
-	-- 		end 
-	-- 	end
-	-- end
-	-- STEEL PLEASE ADD REMOVEACCESSORY SO I DONT NEED TO DO THE ABOVE OK
-
-	-- if(not found) then
 	actor.RemoveAccessories()
 
 	local randomizationPool = {}
