@@ -115,10 +115,10 @@ end
 function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	local nameLength = #material.name
 	if(nameLength >= 4) then
-		local name
-		if(self.RAApplyTextureVehicles or allChecks) then
+		local name = ""
+		if(self.RAApplyTextureToNamedTexture or allChecks) then
 			name = material.name:sub(1, 4):upper()
-			if(name) == "FLAG" then return true end
+			if(name.match("FLAG")) then return true end
 		end
 		
 		if(nameLength >= 8) then
@@ -143,7 +143,7 @@ function MianFlagFramework:Awake()
 	self.AvoidDupeColors = self.script.mutator.GetConfigurationBool("AvoidDupeColors")
 	self.FunnyMode = self.script.mutator.GetConfigurationBool("FunnyMode")
 	self.AvoidDupeData = self.script.mutator.GetConfigurationBool("AvoidDupeData")
-	self.RAApplyTextureVehicles = self.script.mutator.GetConfigurationBool("RAApplyTextureVehicles")
+	self.RAApplyTextureToNamedTexture = self.script.mutator.GetConfigurationBool("RAApplyTextureToNamedTexture")
 	self.ChanceInGroup = self.script.mutator.GetConfigurationFloat("ChanceInGroup")
 	self.ChanceFromPoint = self.script.mutator.GetConfigurationFloat("ChanceFromPoint")
 	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
