@@ -112,6 +112,19 @@ local function getLengthOfDict(dict)
 	return count;
 end
 
+local function getTeams()
+	if(Extensions.Get("lovebites")) then
+		self:Log("Detected Mian's Love Bites!")
+		return MultiTeamBattleDataExtensions.GetTeams()
+	end
+
+	return {
+		[Team.Blue] = "Blue",
+		[Team.Red] = "Red",
+		[Team.Neutral] = "Neutral"
+	}
+end
+
 function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	local nameLength = #material.name
 	if(nameLength >= 4) then
@@ -185,22 +198,18 @@ function MianFlagFramework:Awake()
 		meshesArray = {}
 	}
 
-	self.TeamToName = {
-		[Team.Blue] = "Blue",
-		[Team.Red] = "Red", 
-		[Team.Neutral] = "Neutral"
-	}
+	self.TeamToName = getTeams()
 
-	self.OppositeTeam = {
-		[Team.Blue] = Team.Red,
-		[Team.Red] = Team.Blue
-	}
+	-- self.OppositeTeam = {
+	-- 	[Team.Blue] = Team.Red,
+	-- 	[Team.Red] = Team.Blue
+	-- }
 
 	self.TeamVoiceMutators = {
 
 	}
 
-	for team, _ in pairs(self.OppositeTeam) do
+	for team, _ in pairs(self.TeamToName) do
 		self.TeamToActors[team] = {}
 	end
 
@@ -348,6 +357,9 @@ function MianFlagFramework:Awake()
 			end
 
 			return names
+		end,
+		USEFORTEAM = function(name) 
+			
 		end,
 		TEAMNAME = function(flags, name)
 			if(self.commandContext.type ~= "flags") then return nil end
@@ -887,9 +899,11 @@ function MianFlagFramework:onDriverChanged()
 	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
 		table.insert(meshRenderers, renderer)
 	end
-	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
-		table.insert(meshRenderers, renderer)
-	end
+	
+	-- Might be replacing actors materials?
+	-- for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
+	-- 	table.insert(meshRenderers, renderer)
+	-- end
 	for _, meshRenderer in ipairs(meshRenderers) do
 		for _, material in ipairs(meshRenderer.materials) do
 			if(self:canBeReplacedWithFlagTexture(material)) then
