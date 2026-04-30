@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: -3565725640322070915}
   - component: {fileID: 1726073807400080023}
   - component: {fileID: -4502803138041493914}
+  - component: {fileID: 1812085528207577926}
   m_Layer: 0
   m_Name: Flag Framework
   m_TagString: Untagged
@@ -268,6 +269,53 @@ MonoBehaviour:
     send:
       destinations:
       - {fileID: 1726073807400080023}
+  - name: detectedMTWithoutLB
+    send:
+      destinations:
+      - {fileID: 1812085528207577926}
+--- !u!114 &1812085528207577926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1450327976445928608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25180ebf807ab1247b56be71f8977fe6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  repeatType: 0
+  lines:
+  - actorPose: p advisor
+    overrideName: Mian
+    text: 'Heads up <color=#66ff00><player></color>! Just wanted to let you know
+      from the <color=#fc0fc0>Custom Flags Framework</color> that the Love Bites
+      plugins is required if you want to use Multi-Team Battles.
+
+'
+    portraitGrain: 0
+    onSayLine:
+      destinations: []
+    blipSoundPlayback: 0
+    overrideBlipSound: 0
+    overrideBlipCustomClip: {fileID: 0}
+    duration: 10
+  - actorPose: p advisor
+    overrideName: Mian
+    text: <color=red>TERRIBLE</color> things will occur that will bring the framework
+      to its knees otherwise! To prevent this, I've disabled the framework for you.
+      Your welcome :)
+    portraitGrain: 0
+    onSayLine:
+      destinations: []
+    blipSoundPlayback: 0
+    overrideBlipSound: 0
+    overrideBlipCustomClip: {fileID: 0}
+    duration: 9
+  onDialogComplete:
+    destinations: []
+  stopActiveDialogOnComponentDisabled: 1
 --- !u!1 &1799220026407893892
 GameObject:
   m_ObjectHideFlags: 0

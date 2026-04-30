@@ -431,6 +431,15 @@ function MianFlagFramework:Awake()
 end
 
 function MianFlagFramework:Start()
+	for _, actor in ipairs(ActorManager.actors) do
+		if(self.TeamToName[actor.team] == nil) then
+			self.FinishedAddingPacks = true
+			self:log("Detected Multi-Teams Battle but Love Bites is not installed!")
+			self.gameObject.GetComponent(TriggerScriptedSignal).Send("detectedMTWithoutLB")
+			return
+		end
+	end
+	
 	for _, capturePoint in ipairs(self.Flags) do
 		self:autoSetPointMaterial(capturePoint)
 		self.script.AddValueMonitor("pendingOwner", "onPendingOwnerChanged", capturePoint)
@@ -709,6 +718,7 @@ function MianFlagFramework:Update()
 			self.FinishedAddingPacks = true
 
 			self:log("All packs seem to have been added: Starting framework version "..self.version)
+
 			local TeamToName = cloneDict(self.TeamToName)
 			TeamToName[Team.Neutral] = nil
 			TeamToName = dictToArray(TeamToName)
