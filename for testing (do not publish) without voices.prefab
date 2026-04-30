@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 5222062321539068418}
   - component: {fileID: 6726400015927089120}
   m_Layer: 0
-  m_Name: for testing (do not publish)
+  m_Name: for testing (do not publish) without voices
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -219,102 +219,6 @@ MonoBehaviour:
       ranges: []
       strings: []
       bools: []
-      dropdowns: []
-  - name: Team Voices (<color=red>Raven</color>)
-    description: v3.1.3
-    menuImage: {fileID: 2800000, guid: e48d9aa4b3c2689409313c79eb9d4c31, type: 3}
-    mutatorPrefab: {fileID: 3724385843494416373, guid: 4c55af8afecc41f43b74ff19ab40fdbb, type: 3}
-    configuration:
-      labels: []
-      integers:
-      - id: Channels
-        displayName: Channels
-        orderPriority: 0
-        value: 5
-      floats:
-      - id: intervalBetwwenKillSounds
-        displayName: Interval Between Kill Sounds
-        orderPriority: 2
-        value: 2
-      ranges:
-      - id: volume
-        displayName: Volume
-        orderPriority: 0
-        value:
-          value: 100
-          min: 0
-          max: 100
-          wholeNumbers: 1
-      - id: announcerVolume
-        displayName: Announcer Volume
-        orderPriority: 4
-        value:
-          value: 100
-          min: 0
-          max: 100
-          wholeNumbers: 1
-      strings: []
-      bools:
-      - id: AffectsPlayer
-        displayName: Affects Player
-        orderPriority: 0
-        value: 0
-      - id: doKillReactions
-        displayName: Kill Reactions
-        orderPriority: 1
-        value: 1
-      - id: doAnnouncerVoices
-        displayName: Announcer
-        orderPriority: 3
-        value: 1
-      dropdowns: []
-  - name: Team Voices (<color=blue>Eagle</color>)
-    description: v3.1.3
-    menuImage: {fileID: 2800000, guid: bb149e7481a8ab04d99415f56094cb31, type: 3}
-    mutatorPrefab: {fileID: 6085490467254772579, guid: 008779650227b974db911b3f191e637c, type: 3}
-    configuration:
-      labels: []
-      integers:
-      - id: Channels
-        displayName: Channels
-        orderPriority: 0
-        value: 5
-      floats:
-      - id: intervalBetwwenKillSounds
-        displayName: Interval Between Kill Sounds
-        orderPriority: 2
-        value: 2
-      ranges:
-      - id: volume
-        displayName: Volume
-        orderPriority: 0
-        value:
-          value: 100
-          min: 0
-          max: 100
-          wholeNumbers: 1
-      - id: announcerVolume
-        displayName: Announcer Volume
-        orderPriority: 4
-        value:
-          value: 100
-          min: 0
-          max: 100
-          wholeNumbers: 1
-      strings: []
-      bools:
-      - id: AffectsPlayer
-        displayName: Affects Player
-        orderPriority: 0
-        value: 0
-      - id: doKillReactions
-        displayName: Kill Reactions
-        orderPriority: 1
-        value: 1
-      - id: doAnnouncerVoices
-        displayName: Announcer
-        orderPriority: 3
-        value: 1
       dropdowns: []
 --- !u!1 &1799220026407893892
 GameObject:

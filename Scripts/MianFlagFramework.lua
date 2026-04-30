@@ -8,6 +8,35 @@ local function isCommand(syntax)
 	return syntax:match("{(.*)}")
 end
 
+local function cloneDict(t)
+    local copy = {}
+    for k, v in pairs(t) do
+        copy[k] = v
+    end
+    return copy
+end
+
+local function dictToArray(t)
+    local list = {}
+
+    for k, v in pairs(t) do
+        table.insert(list, {
+            key = k,
+            value = v
+        })
+    end
+
+    return list
+end
+
+local function shuffleArray(arr)
+    for i = #arr, 2, -1 do
+        local j = math.random(i)
+        arr[i], arr[j] = arr[j], arr[i]
+    end
+    return arr
+end
+
 local function findResults(str)
     local results = {}
 
@@ -142,8 +171,8 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.2.2"
-	self.gameVersion = "30"
+	self.version = "2.3.0"
+	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
 	self.Flags = ActorManager.capturePoints
@@ -198,12 +227,8 @@ function MianFlagFramework:Awake()
 		meshesArray = {}
 	}
 
+	self.VanillaTeamList = {[Team.Blue] = "Blue",[Team.Red] = "Red"}
 	self.TeamToName = getTeams()
-
-	-- self.OppositeTeam = {
-	-- 	[Team.Blue] = Team.Red,
-	-- 	[Team.Red] = Team.Blue
-	-- }
 
 	self.TeamVoiceMutators = {
 
@@ -359,7 +384,7 @@ function MianFlagFramework:Awake()
 			return names
 		end,
 		USEFORTEAM = function(name) 
-			
+
 		end,
 		TEAMNAME = function(flags, name)
 			if(self.commandContext.type ~= "flags") then return nil end
@@ -681,25 +706,23 @@ function MianFlagFramework:Update()
 			self.FinishedAddingPacks = true
 
 			self:log("All packs seem to have been added: Starting framework version "..self.version)
-			local TeamToName = self.TeamToName
+			local TeamToName = cloneDict(self.TeamToName)
 			TeamToName[Team.Neutral] = nil
-			local decision = self.ExecuteConfigForTeam
-			local firstTeam
-			if(decision == 0) then
-				firstTeam = Team.Blue
-			elseif(decision == 1) then
-				firstTeam = Team.Red
-			else
-				firstTeam = getRandomKeyFromDict(TeamToName)
-			end
-			local secondTeam = (Team.Blue ~= firstTeam and Team.Blue) or (Team.Red ~= firstTeam and Team.Red)
-			TeamToName = {
-				[firstTeam] = TeamToName[firstTeam],
-				[secondTeam] = TeamToName[secondTeam]
-			}
+			TeamToName = dictToArray(TeamToName)
 
-			local lastTeam = false
-			
+			local decision = self.ExecuteConfigForTeam
+
+			if(decision == 0 or decision == 1) then
+				for index, value in ipairs(TeamToName) do
+					if(value.key == (decision == 0 and "Blue") or value.key == (decision == 1 and "Red")) then
+						table.insert(TeamToName, table.remove(TeamToName, index), 1);
+						break
+					end
+				end
+			else
+				TeamToName = shuffleArray(TeamToName)
+			end
+
 			local function executeCommandFromSyntax(syntax)
 				syntax = syntax:upper()
 				local _, endIndex, command = syntax:find("([^:]+)")
@@ -760,6 +783,14 @@ function MianFlagFramework:Update()
 				return list
 			end
 
+			local function findTexturesForExtraTeam(teamName, string)
+				for part in string.gmatch("[^/]+") do
+					if(part.sub(1, #teamName + 2) == teamName.."=>") then
+						return part.sub(#teamName + 3)
+					end
+				end
+			end
+
 			self.commandContext = {
 				type = "meshes",
 				allowDupes = true
@@ -773,8 +804,21 @@ function MianFlagFramework:Update()
 			executeStringList(self.AssignedVoices)
 
 			-- Indexes will still work with enums, so do not worry about team
-			for team, name in pairs(TeamToName) do
-				local textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
+			local index = -1
+
+			for _, pair in pairs(TeamToName) do
+				local team = pair.key
+				local name = pair.value
+				index = index + 1
+
+				local isVanillaTeam = self.VanillaTeamList[team]
+				local textures
+				if(isVanillaTeam) then 
+					textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
+				else
+					textures = findTexturesForExtraTeam(name, self.script.mutator.GetConfigurationString("ExtraTeamFlagTextures")) or ""
+				end
+
 				local texDatas = {}
 
 				self.commandContext = {
@@ -798,7 +842,7 @@ function MianFlagFramework:Update()
 				local lastTexData = texDatas[#texDatas]
 
 				if(firstTexData and lastTexData) then
-					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)")
+					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)") or ("MTB Scoreboard Column "..index)
 					if(self.ChangeTeamNamesToFlagName) then
 						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
 				
@@ -808,14 +852,25 @@ function MianFlagFramework:Update()
 			
 					if(self.ChangeTeamColorToFlagColor) then
 						local color = firstTexData.teamColor or ColorScheme.GetTeamColor(team)
-						if(lastTeam) then
-							local otherTeamColor = ColorScheme.GetTeamColor(self.OppositeTeam[team])
-							if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b and self.AvoidDupeColors) then
-								color.r = math.random(0, 255) / 255
-								color.g = math.random(0, 255) / 255
-								color.b = math.random(0, 255) / 255
+
+						local keepLoopin = true
+						while(keepLoopin and self.AvoidDupeColors) do
+							local check = false
+
+							for _team, _ in pairs(TeamToName) do
+								local otherTeamColor = ColorScheme.GetTeamColor(_team)
+								if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b) then
+									color.r = math.random(0, 255) / 255
+									color.g = math.random(0, 255) / 255
+									color.b = math.random(0, 255) / 255
+									check = true
+									break
+								end
 							end
+
+							keepLoopin = check
 						end
+
 						color = Color(color.r, color.g, color.b)
 						local funnyColor = Color(color.r * 255, color.g * 255, color.b * 255)
 						ColorScheme.SetTeamColor(team, (self.FunnyMode and funnyColor) or color)
@@ -842,9 +897,6 @@ function MianFlagFramework:Update()
 						end
 					end
 				end
-
-
-				lastTeam = true
 			end
 		
 			for _, vehicle in ipairs(ActorManager.vehicles) do

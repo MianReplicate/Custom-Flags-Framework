@@ -129,6 +129,10 @@ MonoBehaviour:
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 2
         value: 
+      - id: ExtraFlagTextures
+        displayName: <color=orange>Other Team Flag(s)</color>
+        orderPriority: 2
+        value: 
       - id: Meshes
         displayName: <color=green>Accessories</color>
         orderPriority: 3
