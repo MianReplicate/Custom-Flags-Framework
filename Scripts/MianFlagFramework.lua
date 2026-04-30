@@ -143,13 +143,12 @@ end
 
 local function getTeams()
 	if(Extensions.Get("lovebites")) then
-		self:Log("Detected Mian's Love Bites!")
 		return MultiTeamBattleDataExtensions.GetTeams()
 	end
 
 	return {
-		[Team.Blue] = "Blue",
-		[Team.Red] = "Red",
+		[Team.Blue] = "EAGLE",
+		[Team.Red] = "RAVEN",
 		[Team.Neutral] = "Neutral"
 	}
 end
@@ -160,7 +159,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 		local name = ""
 		if(self.RAApplyTextureToNamedTexture or allChecks) then
 			name = material.name:sub(1, 4):upper()
-			if(name.match("FLAG")) then return true end
+			if(name:match("FLAG")) then return true end
 		end
 		
 		if(nameLength >= 8) then
@@ -227,7 +226,7 @@ function MianFlagFramework:Awake()
 		meshesArray = {}
 	}
 
-	self.VanillaTeamList = {[Team.Blue] = "Blue",[Team.Red] = "Red"}
+	self.VanillaTeamList = {[Team.Blue] = "EAGLE",[Team.Red] = "RAVEN"}
 	self.TeamToName = getTeams()
 
 	self.TeamVoiceMutators = {
@@ -454,6 +453,10 @@ function MianFlagFramework:Start()
 
 	if(#self.TeamVoiceMutators > 0) then
 		self:log("Detected Team Voices!")
+	end
+
+	if(Extensions.Get("lovebites")) then
+		self:log("Detected Mian's Love Bites!")
 	end
 
 	GameEvents.onCapturePointCaptured.AddListener(self,"autoSetPointMaterial")
@@ -784,9 +787,9 @@ function MianFlagFramework:Update()
 			end
 
 			local function findTexturesForExtraTeam(teamName, string)
-				for part in string.gmatch("[^/]+") do
-					if(part.sub(1, #teamName + 2) == teamName.."=>") then
-						return part.sub(#teamName + 3)
+				for part in string:gmatch("[^/]+") do
+					if(part:sub(1, #teamName) == teamName) then
+						return part:sub(#teamName + 3)
 					end
 				end
 			end
@@ -811,12 +814,12 @@ function MianFlagFramework:Update()
 				local name = pair.value
 				index = index + 1
 
-				local isVanillaTeam = self.VanillaTeamList[team]
+				local vanillaTeamName = self.VanillaTeamList[team]
 				local textures
-				if(isVanillaTeam) then 
-					textures = self.script.mutator.GetConfigurationString(name.."FlagTextures")
+				if(vanillaTeamName) then 
+					textures = self.script.mutator.GetConfigurationString(vanillaTeamName.."FlagTextures")
 				else
-					textures = findTexturesForExtraTeam(name, self.script.mutator.GetConfigurationString("ExtraTeamFlagTextures")) or ""
+					textures = findTexturesForExtraTeam(name, self.script.mutator.GetConfigurationString("ExtraFlagTextures")) or ""
 				end
 
 				local texDatas = {}
@@ -842,12 +845,12 @@ function MianFlagFramework:Update()
 				local lastTexData = texDatas[#texDatas]
 
 				if(firstTexData and lastTexData) then
-					local teamSpecific = (team == Team.Blue and "") or (team == Team.Red and " (1)") or ("MTB Scoreboard Column "..index)
+					local teamSpecific = (team == Team.Blue and "Team Panel") or (team == Team.Red and "Team Panel (1)") or ("MTB Scoreboard Column "..index)
 					if(self.ChangeTeamNamesToFlagName) then
 						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
 				
 						GameManager.SetTeamName(team, name)
-						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
+						GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
 					end
 			
 					if(self.ChangeTeamColorToFlagColor) then
@@ -875,11 +878,11 @@ function MianFlagFramework:Update()
 						local funnyColor = Color(color.r * 255, color.g * 255, color.b * 255)
 						ColorScheme.SetTeamColor(team, (self.FunnyMode and funnyColor) or color)
 						color.a = 0.392
-						GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
+						GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
 					end
 
 					if(self.ChangeScoreboardToTeamFlag) then
-						local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/Team Panel"..teamSpecific).GetComponent(Image)
+						local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific).GetComponent(Image)
 						-- local a = teamPanelImage.color.a
 						teamPanelImage.material = self:createOrGetExistingMaterialFromTexture("UI", firstTexData.texture, nil, 1, teamPanelImage.material)
 						local color = Color(0.6, 0.6, 0.6, 0.5)

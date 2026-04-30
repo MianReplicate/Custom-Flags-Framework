@@ -68,8 +68,8 @@ MonoBehaviour:
         orderPriority: 0
       - id: 
         displayName: <b><color=magenta>This will try to apply flag textures to every
-          vehicle that the framework can. If you have issues with textures on vehicles,
-          try disabling this.</color></b>
+          vehicle that the framework can. If you have issues with textures that are
+          flag-like, try disabling this.</color></b>
         orderPriority: 13
       - id: 
         displayName: <color=yellow>This determines how likely it is for an actor
@@ -121,11 +121,11 @@ MonoBehaviour:
         value: 0.5
       ranges: []
       strings:
-      - id: BlueFlagTextures
+      - id: EAGLEFlagTextures
         displayName: <color=blue>Eagle Flag(s)</color>
         orderPriority: 1
         value: 
-      - id: RedFlagTextures
+      - id: RAVENFlagTextures
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 2
         value: 
@@ -170,8 +170,8 @@ MonoBehaviour:
         displayName: Change Scoreboard BG to Flag
         orderPriority: 5
         value: 1
-      - id: RAApplyTextureVehicles
-        displayName: <color=magenta>Apply Flag Textures to All Vehicles</color>
+      - id: RAApplyTextureToNamedTexture
+        displayName: <color=magenta>Apply Flag Textures to Named Textures</color>
         orderPriority: 14
         value: 1
       - id: DebugMode
