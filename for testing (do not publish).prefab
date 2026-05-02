@@ -170,6 +170,10 @@ MonoBehaviour:
         displayName: <color=magenta>Apply Flag Textures to Named Textures</color>
         orderPriority: 14
         value: 1
+      - id: SetActorColorToFlagColor
+        displayName: Set Individual Actor Color to Their Flag (Requires Love Bites)
+        orderPriority: 15
+        value: 0
       - id: DebugMode
         displayName: Debug Mode
         orderPriority: 50

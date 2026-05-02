@@ -158,12 +158,13 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 	if(nameLength >= 4) then
 		local name = ""
 		if(self.RAApplyTextureToNamedTexture or allChecks) then
-			name = material.name:sub(1, 4):upper()
+			name = material.name:upper()
+
 			if(name:match("FLAG")) then return true end
 		end
 		
 		if(nameLength >= 8) then
-			name = material.name:sub(1, 8):upper()
+			name = material.name:upper()
 			if(name) == "CFF_FLAG" then return true end
 		end
 	end
@@ -175,22 +176,25 @@ function MianFlagFramework:Awake()
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
 	self.Flags = ActorManager.capturePoints
-	self.ChangeTeamNamesToFlagName = self.script.mutator.GetConfigurationBool("ChangeTeamNamesToFlagName")
-	self.ChangeTeamColorToFlagColor = self.script.mutator.GetConfigurationBool("ChangeTeamColorToFlagColor")
-	self.ChangeScoreboardToTeamFlag = self.script.mutator.GetConfigurationBool("ChangeScoreboardToTeamFlag")
-	self.DefaultWaitTimer = self.script.mutator.GetConfigurationInt("WaitForMutators")
-	self.IgnoreFailedCapturePoint = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
-	self.AlertedUser = self.script.mutator.GetConfigurationBool("IgnoreFailedCapturePoint")
-	self.AvoidDupeColors = self.script.mutator.GetConfigurationBool("AvoidDupeColors")
-	self.FunnyMode = self.script.mutator.GetConfigurationBool("FunnyMode")
-	self.AvoidDupeData = self.script.mutator.GetConfigurationBool("AvoidDupeData")
-	self.RAApplyTextureToNamedTexture = self.script.mutator.GetConfigurationBool("RAApplyTextureToNamedTexture")
-	self.ChanceInGroup = self.script.mutator.GetConfigurationFloat("ChanceInGroup")
-	self.ChanceFromPoint = self.script.mutator.GetConfigurationFloat("ChanceFromPoint")
-	self.ExecuteConfigForTeam = self.script.mutator.GetConfigurationDropdown("ExecuteConfigForTeam")
-	self.AssignedMeshes = self.script.mutator.GetConfigurationString("Meshes")
-	self.AssignedVoices = self.script.mutator.GetConfigurationString("Voices")
-	self.DebugMode = self.script.mutator.GetConfigurationBool("DebugMode")
+
+	local config = self.script.mutator.configuration
+	self.ChangeTeamNamesToFlagName = config.GetBool("ChangeTeamNamesToFlagName")
+	self.ChangeTeamColorToFlagColor = config.GetBool("ChangeTeamColorToFlagColor")
+	self.ChangeScoreboardToTeamFlag = config.GetBool("ChangeScoreboardToTeamFlag")
+	self.DefaultWaitTimer = config.GetInt("WaitForMutators")
+	self.IgnoreFailedCapturePoint = config.GetBool("IgnoreFailedCapturePoint")
+	self.AlertedUser = config.GetBool("IgnoreFailedCapturePoint")
+	self.AvoidDupeColors = config.GetBool("AvoidDupeColors")
+	self.FunnyMode = config.GetBool("FunnyMode")
+	self.AvoidDupeData = config.GetBool("AvoidDupeData")
+	self.RAApplyTextureToNamedTexture = config.GetBool("RAApplyTextureToNamedTexture")
+	self.ChanceInGroup = config.GetFloat("ChanceInGroup")
+	self.ChanceFromPoint = config.GetFloat("ChanceFromPoint")
+	self.ExecuteConfigForTeam = config.GetDropdown("ExecuteConfigForTeam")
+	self.AssignedMeshes = config.GetString("Meshes")
+	self.AssignedVoices = config.GetString("Voices")
+	self.DebugMode = config.GetBool("DebugMode")
+	self.SetIndividualActorColor = config.GetBool("SetActorColorToFlagColor")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
 	self.WaitTimer = self.DefaultWaitTimer
@@ -211,6 +215,7 @@ function MianFlagFramework:Awake()
 
 	-- Actors are assigned datas
 	self.ActorsToTexture = {}
+	self.ActorsHaveListener = {}
 
 	self.TeamToActors = {}
 	self.ActorsToStoredMeshRenderer = {}
@@ -827,9 +832,9 @@ function MianFlagFramework:Update()
 				local vanillaTeamName = self.VanillaTeamList[team]
 				local textures
 				if(vanillaTeamName) then 
-					textures = self.script.mutator.GetConfigurationString(vanillaTeamName.."FlagTextures")
+					textures = self.script.mutator.configuration.GetString(vanillaTeamName.."FlagTextures")
 				else
-					textures = findTexturesForExtraTeam(name, self.script.mutator.GetConfigurationString("ExtraFlagTextures")) or ""
+					textures = findTexturesForExtraTeam(name, self.script.mutator.configuration.GetString("ExtraFlagTextures")) or ""
 				end
 
 				local texDatas = {}
@@ -956,7 +961,35 @@ function MianFlagFramework:onMatchEnd(team)
 	end
 end
 
-function MianFlagFramework:onDriverChanged()
+function MianFlagFramework:ApplyTextureToTarget(target, texture)
+    if not target then return false end
+
+    local changed = false
+    local renderers = {}
+
+    for _, renderer in ipairs(target.GetComponentsInChildren(MeshRenderer)) do
+        table.insert(renderers, renderer)
+    end
+
+    for _, renderer in ipairs(target.GetComponentsInChildren(SkinnedMeshRenderer)) do
+        table.insert(renderers, renderer)
+    end
+
+    for _, renderer in ipairs(renderers) do
+        for _, material in ipairs(renderer.materials) do
+            if(self:canBeReplacedWithFlagTexture(material)) then
+
+                material.SetTexture("_MainTex", texture)
+                material.color = Color(1, 1, 1, 1)
+                changed = true
+            end
+        end
+    end
+
+    return changed
+end
+
+function MianFlagFramework:onDriverChange()
 	local vehicle = CurrentEvent.listenerData
 	local driver = vehicle.driver
 
@@ -965,10 +998,6 @@ function MianFlagFramework:onDriverChanged()
 		table.insert(meshRenderers, renderer)
 	end
 	
-	-- Might be replacing actors materials?
-	-- for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
-	-- 	table.insert(meshRenderers, renderer)
-	-- end
 	for _, meshRenderer in ipairs(meshRenderers) do
 		for _, material in ipairs(meshRenderer.materials) do
 			if(self:canBeReplacedWithFlagTexture(material)) then
@@ -984,17 +1013,57 @@ function MianFlagFramework:onDriverChanged()
 	end
 end
 
-function MianFlagFramework:vehicleDriver()
+function MianFlagFramework:seatDriver()
 	if(not CurrentEvent.listenerData) then return end
 	return CurrentEvent.listenerData.driver
 end
 
 function MianFlagFramework:onVehicleSpawned(vehicle)
-	self.script.AddValueMonitor("vehicleDriver", "onDriverChanged", vehicle)
+	self.script.AddValueMonitor("seatDriver", "onDriverChange", vehicle)
+
+	local meshRenderers = {}
+	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
+		table.insert(meshRenderers, renderer)
+	end
+
+	for _, meshRenderer in ipairs(meshRenderers) do
+		for _, material in ipairs(meshRenderer.materials) do
+			if(self:canBeReplacedWithFlagTexture(material)) then
+				material.SetTexture("_MainTex", nil)
+				material.color = Color(1, 1, 1, 1)
+			end
+		end
+	end
+end
+
+function MianFlagFramework:monitorActiveWeapon()
+	if(not CurrentEvent.listenerData and CurrentEvent.listenerData.isDead) then return end
+	return CurrentEvent.listenerData.activeWeapon
+end
+
+function MianFlagFramework:onSwapWeapon(weapon, actor)
+	local actor = actor or CurrentEvent.listenerData
+
+	if not weapon or (actor.activeSeat and actor.activeSeat.hasActiveWeapon) then return end
+
+    local texture = self.ActorsToTexture[actor]
+    if not texture then return end
+
+    local weaponChanged = self:ApplyTextureToTarget(weapon.gameObject, texture)
+
+    if weaponChanged and actor.isPlayer then
+        self:ApplyTextureToTarget(actor.transform.gameObject, texture)
+    end
 end
 
 function MianFlagFramework:onActorSpawn(actor)
 	self.GameStarted = true
+
+	if(not self.ActorsHaveListener[actor]) then
+		self.script.AddValueMonitor("monitorActiveWeapon", "onSwapWeapon", actor)
+		self.ActorsHaveListener[actor] = true
+	end
+
 	local team = actor.team
 	if(not team) then return end
 	local datas = (actor.isPlayer and self.PlayerData) or self.TeamToData[actor.team]
@@ -1083,6 +1152,12 @@ function MianFlagFramework:onActorSpawn(actor)
 		self:addMeshDataToActor(actor, texture, meshData)
 		table.remove(randomizationPool, random)
 	end
+
+	if(Extensions.Get("lovebites") and self.SetIndividualActorColor) then
+		ColorSchemeExtensions.OverrideActorColor(actor, self:getData("flags", texture.name).teamColor)
+	end
+
+	self:onSwapWeapon(actor.activeWeapon, actor) -- doesn't run on initial spawn, so we gotta do it ourselves
 end
 
 function MianFlagFramework:addMeshDataToActor(actor, texture, meshData)
