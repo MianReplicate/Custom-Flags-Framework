@@ -122,11 +122,11 @@ MonoBehaviour:
         value: 0.5
       ranges: []
       strings:
-      - id: EAGLEFlagTextures
+      - id: BlueFlagTextures
         displayName: <color=blue>Eagle Flag(s)</color>
         orderPriority: 1
         value: 
-      - id: RAVENFlagTextures
+      - id: RedFlagTextures
         displayName: <color=red>Raven Flag(s)</color>
         orderPriority: 2
         value: 

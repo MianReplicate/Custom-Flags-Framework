@@ -147,8 +147,8 @@ local function getTeams()
 	end
 
 	return {
-		[Team.Blue] = "EAGLE",
-		[Team.Red] = "RAVEN",
+		[Team.Blue] = "Blue",
+		[Team.Red] = "Red",
 		[Team.Neutral] = "Neutral"
 	}
 end
@@ -171,7 +171,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.3.0"
+	self.version = "2.4.0"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -231,7 +231,7 @@ function MianFlagFramework:Awake()
 		meshesArray = {}
 	}
 
-	self.VanillaTeamList = {[Team.Blue] = "EAGLE",[Team.Red] = "RAVEN"}
+	self.VanillaTeamList = {[Team.Blue] = "Blue",[Team.Red] = "Red"}
 	self.TeamToName = getTeams()
 
 	self.TeamVoiceMutators = {
@@ -249,7 +249,9 @@ function MianFlagFramework:Awake()
 
 	self.runnableStringCommands = {
 		VOICE = function(flags, voices)
-			if(self.commandContext.type ~= "voices") then return end
+			if(self.commandContext.type ~= "voices") then 
+				error("VOICE command cannot be used in this field!")
+			end
 			if(#voices <= 0) then self:log("No voices given for flags to use") return end
 			if(#voices > 1) then self:log("Cannot assign more than one voice to a flag") return end
 			for _, flag in ipairs(flags) do
@@ -257,7 +259,9 @@ function MianFlagFramework:Awake()
 			end
 		end,
 		ACCESSORY = function(flags, meshes)
-			if(self.commandContext.type ~= "meshes") then return end
+			if(self.commandContext.type ~= "meshes") then
+				error("ACCESSORY command cannot be used in this field!")
+			end
 
 			local meshTable = {}
 			for _, mesh in ipairs(meshes) do
@@ -346,8 +350,8 @@ function MianFlagFramework:Awake()
 			local type = self.commandContext.useTypes and self.commandContext.type
 			local unusedDatas = self:getAllNonUsedDatas(type)
 			for _, mutatorId in ipairs(mutatorIds) do
-				local success, datas = pcall(self.getDatasFromMutator, self, type, mutatorId)
-				if(success and datas) then
+				local datas = self:getDatasFromMutator(type, mutatorId)
+				if(datas) then
 					for name, _ in pairs(datas) do
 						if(not unusedDatas or self.commandContext.allowDupes or unusedDatas[name]) then
 							table.insert(names, name)
@@ -362,7 +366,7 @@ function MianFlagFramework:Awake()
 			amount = tonumber(testing)
 
 			if(not amount) then
-				error("Invalid amount: "..testing)
+				error(tostring(testing).." is not a number!")
 			end
 
 			local randomizationPool = {}
@@ -386,9 +390,6 @@ function MianFlagFramework:Awake()
 			end
 
 			return names
-		end,
-		USEFORTEAM = function(name) 
-
 		end,
 		TEAMNAME = function(flags, name)
 			if(self.commandContext.type ~= "flags") then return nil end
@@ -715,6 +716,94 @@ function MianFlagFramework:putDataForTeam(team, data)
 	self:debug(displayName.." was added to "..ColorScheme.FormatTeamColor(self.TeamToName[team], team, ColorVariant.Bright))
 end
 
+-- Use externally if needed to validate configuration
+function MianFlagFramework:validateConfiguration(config)
+	local results, hasFailedSomewhere = self:executeStringList(config)
+	for _, _name in ipairs(results) do
+		_name = _name:upper()
+		local data = self:getData(self.commandContext.type, _name)
+		if(not data) then
+			self:log(_name.." is an invalid flag! Did you name it incorrectly?")
+			hasFailedSomewhere = true
+		end
+	end
+	return not hasFailedSomewhere
+end
+
+function MianFlagFramework:executeCommandFromSyntax(syntax)
+	syntax = syntax:upper()
+	local _, endIndex, command = syntax:find("([^:]+)")
+	local argStrings = syntax:sub(endIndex+2)
+
+	local commandFunction = self.runnableStringCommands[command]
+	if(commandFunction) then
+		local args = {}
+		for _, arg in ipairs(findArgResults(argStrings)) do
+			local returnArg = {}
+			for _, listArg in ipairs(findResults(arg)) do
+				local command = isCommand(listArg)
+				if(command) then
+					local _, argsFromCommand = self:executeCommandFromSyntax(command)
+					if(argsFromCommand) then
+						for _, newArg in pairs(argsFromCommand) do
+							table.insert(returnArg, newArg)
+						end
+					end
+				else
+					table.insert(returnArg, listArg)
+				end
+			end
+			table.insert(args, returnArg)
+		end
+
+		local success, returnValue = pcall(commandFunction, table.unpack(args))
+
+		if(not success) then
+			self:log("<color=red>Syntax failed: "..syntax.."</color>")
+			if(returnValue) then
+				self:log("<color=red>"..returnValue.."</color>")
+			end
+		end
+
+		return success, returnValue
+	end
+end
+
+ function MianFlagFramework:executeStringList(string)
+	local hasFailedSomewhere = false
+	local list = {}
+	for _, name in ipairs(findResults(string)) do
+		local command = isCommand(name)
+		local success, results = nil, nil
+		if(command) then
+			success, results = self:executeCommandFromSyntax(command)
+			if(success and results) then
+				for _, _name in ipairs(results) do
+					table.insert(list, _name)						
+				end
+			end
+		end
+
+		-- Was success explicitly set to false?
+		if(success == false) then
+			hasFailedSomewhere = true
+		end
+
+		if(not success) then
+			table.insert(list, name)
+		end
+	end
+	return list, hasFailedSomewhere
+end
+
+function MianFlagFramework:findTexturesForExtraTeam(teamName, string)
+	for part in string:gmatch("[^/]+") do
+		if(part:sub(1, #teamName) == teamName) then
+			return part:sub(#teamName + 3)
+		end
+	end
+end
+
 function MianFlagFramework:Update()
 	if(not self.FinishedAddingPacks) then
 		self.WaitTimer = self.WaitTimer - Time.deltaTime
@@ -741,85 +830,17 @@ function MianFlagFramework:Update()
 				TeamToName = shuffleArray(TeamToName)
 			end
 
-			local function executeCommandFromSyntax(syntax)
-				syntax = syntax:upper()
-				local _, endIndex, command = syntax:find("([^:]+)")
-				local argStrings = syntax:sub(endIndex+2)
-
-				local commandFunction = self.runnableStringCommands[command]
-				if(commandFunction) then
-					local args = {}
-					for _, arg in ipairs(findArgResults(argStrings)) do
-						local returnArg = {}
-						for _, listArg in ipairs(findResults(arg)) do
-							local command = isCommand(listArg)
-							if(command) then
-								local _, argsFromCommand = executeCommandFromSyntax(command)
-								if(argsFromCommand) then
-									for _, newArg in pairs(argsFromCommand) do
-										table.insert(returnArg, newArg)
-									end
-								end
-							else
-								table.insert(returnArg, listArg)
-							end
-						end
-						table.insert(args, returnArg)
-					end
-
-					local success, returnValue = pcall(commandFunction, table.unpack(args))
-
-					if(not success) then
-						self:log("<color=red>Syntax failed: "..syntax.."</color>")
-						if(returnValue) then
-							self:log("<color=red>"..returnValue.."</color>")
-						end
-					end
-
-					return success, returnValue
-				end
-			end
-
-			local function executeStringList(string)
-				local list = {}
-				for _, name in ipairs(findResults(string)) do
-					local command = isCommand(name)
-					local success, results = false, nil
-					if(command) then
-						success, results = executeCommandFromSyntax(command)
-						if(success and results) then
-							for _, _name in ipairs(results) do
-								table.insert(list, _name)						
-							end
-						end
-					end
-
-					if(not success) then
-						table.insert(list, name)
-					end
-				end
-				return list
-			end
-
-			local function findTexturesForExtraTeam(teamName, string)
-				for part in string:gmatch("[^/]+") do
-					if(part:sub(1, #teamName) == teamName) then
-						return part:sub(#teamName + 3)
-					end
-				end
-			end
-
 			self.commandContext = {
 				type = "meshes",
 				allowDupes = true
 			}
-			executeStringList(self.AssignedMeshes)
+			self:executeStringList(self.AssignedMeshes)
 
 			self.commandContext = {
 				type = "voices",
 				allowDupes = true
 			}
-			executeStringList(self.AssignedVoices)
+			self:executeStringList(self.AssignedVoices)
 
 			-- Indexes will still work with enums, so do not worry about team
 			local index = -1
@@ -830,11 +851,11 @@ function MianFlagFramework:Update()
 				index = index + 1
 
 				local vanillaTeamName = self.VanillaTeamList[team]
-				local textures
+				local configuration
 				if(vanillaTeamName) then 
-					textures = self.script.mutator.configuration.GetString(vanillaTeamName.."FlagTextures")
+					configuration = self.script.mutator.configuration.GetString(vanillaTeamName.."FlagTextures")
 				else
-					textures = findTexturesForExtraTeam(name, self.script.mutator.configuration.GetString("ExtraFlagTextures")) or ""
+					configuration = self:findTexturesForExtraTeam(name, self.script.mutator.configuration.GetString("ExtraFlagTextures")) or ""
 				end
 
 				local texDatas = {}
@@ -844,16 +865,16 @@ function MianFlagFramework:Update()
 					useType = true
 				}
 
-				local results = executeStringList(textures)
+				local results = self:executeStringList(configuration)
 				for _, _name in ipairs(results) do
 					_name = _name:upper()
 					local data = self:getData(self.commandContext.type, _name)
 					if(data) then
 						self:putDataForTeam(team, data)
-						table.insert(texDatas, data)									
+						table.insert(texDatas, data)
 					else
 						self:log(_name.." is an invalid flag! Did you name it incorrectly?")
-					end	
+					end
 				end
 
 				local firstTexData = texDatas[1]
@@ -875,14 +896,17 @@ function MianFlagFramework:Update()
 						while(keepLoopin and self.AvoidDupeColors) do
 							local check = false
 
-							for _team, _ in pairs(TeamToName) do
-								local otherTeamColor = ColorScheme.GetTeamColor(_team)
-								if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b) then
-									color.r = math.random(0, 255) / 255
-									color.g = math.random(0, 255) / 255
-									color.b = math.random(0, 255) / 255
-									check = true
-									break
+							for _, _pair in pairs(TeamToName) do
+								local _team = _pair.key
+								if(_team ~= team) then
+									local otherTeamColor = ColorScheme.GetTeamColor(_team)
+									if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b) then
+										color.r = math.random(0, 255) / 255
+										color.g = math.random(0, 255) / 255
+										color.b = math.random(0, 255) / 255
+										check = true
+										break
+									end
 								end
 							end
 
@@ -1153,8 +1177,11 @@ function MianFlagFramework:onActorSpawn(actor)
 		table.remove(randomizationPool, random)
 	end
 
-	if(Extensions.Get("lovebites") and self.SetIndividualActorColor) then
-		ColorSchemeExtensions.OverrideActorColor(actor, self:getData("flags", texture.name).teamColor)
+	if(Extensions.Get("lovebites") and self.SetIndividualActorColor and texture) then
+		local data = self:getData("flags", texture.name)
+		if(data) then 
+			ColorSchemeExtensions.OverrideActorColor(actor, self:getData("flags", texture.name).teamColor)
+		end
 	end
 
 	self:onSwapWeapon(actor.activeWeapon, actor) -- doesn't run on initial spawn, so we gotta do it ourselves

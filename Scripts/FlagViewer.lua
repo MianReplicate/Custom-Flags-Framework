@@ -172,7 +172,13 @@ function FlagViewer:Start()
 		Flags = self.targets.FlagsCreatorButton.GetComponent(Button),
 		Mutators = self.targets.MutatorsCreatorButton.GetComponent(Button),
 		Accessories = self.targets.AccessoriesCreatorButton.GetComponent(Button),
-		currentlyOn = "flags"
+		currentlyOn = "flags",
+		GetEagle = self.targets.GetEagleConfig,
+		SetEagle = self.targets.SetEagleConfig,
+		GetRaven = self.targets.GetRavenConfig,
+		SetRaven = self.targets.SetRavenConfig,
+		ValidateText = self.targets.ValidateText,
+		ValidateButton = self.targets.ValidateButton
 	}
 	self.MutatorTemplate.SetActive(false)
 	self.FlagTemplate.SetActive(false)
@@ -194,6 +200,11 @@ function FlagViewer:Start()
 	self.Creator.Accessories.onClick.AddListener(self, "filterAccessoryCreator")
 	self.Flags.onClick.AddListener(self, "filterFlag")
 	self.Meshes.onClick.AddListener(self, "filterMesh")
+	self.Creator.GetEagle.onClick.AddListener(self, "clickedGetBlue")
+	self.Creator.GetRaven.onClick.AddListener(self, "clickedGetRed")
+	self.Creator.SetEagle.onClick.AddListener(self, "clickedSetBlue")
+	self.Creator.SetRaven.onClick.AddListener(self, "clickedSetRed")
+	self.Creator.ValidateButton.onClick.AddListener(self, "clickedValidate")
 
 	self.Creator.Output.onEndEdit.AddListener(self, "outputExited")
 
@@ -373,6 +384,15 @@ function FlagViewer:createFlagInList(mutatorName, data, list, functionName, opti
 	return object
 end
 
+function FlagViewer:clickedValidate()
+	local success = self.framework:validateConfiguration(self.Creator.Output.text)
+	if(success) then
+		self.Creator.ValidateText.text = "Configuration was successful!"
+	else
+		self.Creator.ValidateText.text = "Configuration unsuccessful! Check console for more info"
+	end
+end
+
 function FlagViewer:clickedFlag()
 	local texData = CurrentEvent.listenerData
 	local color = texData.teamColor or ColorScheme.GetTeamColor(Team.Blue)
@@ -525,6 +545,37 @@ function FlagViewer:cameraLeft()
 	self.updateCameraTo.y = 0
 end
 
+function FlagViewer:clickedGetBlue()
+	self:getConfig(Team.Blue)
+end
+
+function FlagViewer:clickedGetRed()
+	self:getConfig(Team.Red)
+end
+
+function FlagViewer:clickedSetBlue()
+	self:setConfig(Team.Blue)
+end
+
+function FlagViewer:clickedSetRed()
+	self:setConfig(Team.Red)
+end
+
+function FlagViewer:getConfig(team)
+	 self:setOutput(self.framework.script.mutator.configuration.GetString(self.framework.VanillaTeamList[team].."FlagTextures"))
+end
+
+function FlagViewer:setConfig(team)
+	 self.framework.script.mutator.configuration.SetString(self.framework.VanillaTeamList[team].."FlagTextures", self.Creator.Output.text)
+end
+
+function FlagViewer:setOutput(string)
+	self.creatorEditor.caretPosition = 0
+	self.creatorEditor.selectionAnchorPosition = 0
+	self.creatorEditor.selectionFocusPosition = 0
+	self.Creator.Output.text = string
+end
+
 function FlagViewer:addToOutput(string)
 	local text = self.Creator.Output.text
 	local caretPosition = self.creatorEditor.caretPosition or 0
@@ -560,10 +611,7 @@ function FlagViewer:addToOutput(string)
 		text = text..string
 	end
 
-	self.creatorEditor.caretPosition = 0
-	self.creatorEditor.selectionAnchorPosition = 0
-	self.creatorEditor.selectionFocusPosition = 0
-	self.Creator.Output.text = text
+	self:setOutput(text)
 end
 
 function FlagViewer:outputExited()
