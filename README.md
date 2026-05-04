@@ -11,7 +11,9 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - Use commands to customize flags, accessories and teams! Wanna override the team name or color for a flag? Wanna randomize which flags get placed into each team? You can do that :)
 - You can assign multiple flags to a team, which in turn assigns bots their own flag. When a bot starts capturing a point, the texture on the flag will be changed to represent the bot's assigned flag. This allows for historical scenarios if you wanted to recreate allies within WW2 for example.
 - You can let bots feel prideful of the flag they were assigned by installing and using accessory packs! [Here's one I created](https://steamcommunity.com/sharedfiles/filedetails/?id=3418664311). If you are interested, feel free to create your own accessory packs within the tutorial in the FAQ. This is super helpful if you wanna know what flag a bot has been assigned.
-- Custom vehicles with materials named "FLAG" get textured automatically with the flag assigned to the bot that is driving!
+- Custom vehicles with materials named "FLAG" get textured automatically with the flag assigned to the bot that is driving! This also applies to weapons the bots hold!
+- Support for Multi-Team Battles [(Love Bites plugin required)](https://github.com/MianReplicate/Love-Bites)
+- Ability to override individual actor colors with their assigned flag color instead! [(Love Bites plugin required)](https://github.com/MianReplicate/Love-Bites)
 
 # Modifications from the Original
 - This by itself does not come with any flags. You need to install this alongside another flag pack that uses this framework.
@@ -40,6 +42,11 @@ This is a heavily modified version of the [custom flag framework](https://steamc
 - There are two methods you can use to create your own flag packs (Only one for accessory packs).
 - Simple, slightly less memory efficient, and not publishable to workshop: [Local Flags](https://github.com/MianReplicate/Local-Flags)
 - Advanced, more memory efficient, ability to publish to workshop, and allows for accessory packs as well: [TEMPLATE INFO](https://github.com/MianReplicate/Mian-Custom-Flags-Framework/blob/stable/TEMPLATE-INFO.md)
+
+### How do I assign flags to Multi-Teams Battles?
+- Use syntax TEAM_NAME=>FLAGS with / to separate each additional team. (Commands also work here!)
+
+Example: TEAM 3=>USA,CANADA/TEAM 4=>UK,RUSSIA
 
 # Credits
 Special thanks to Wingnut for letting me use their WIP vehicles for testing out the new Pride Update involving extending flag textures to vehicles.
