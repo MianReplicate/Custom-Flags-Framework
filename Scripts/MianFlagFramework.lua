@@ -133,6 +133,23 @@ local function getRandomValueFromDict(dict)
 	return dict[getRandomKeyFromDict(dict)]
 end
 
+local function containsString(str, look)
+    local startPos, endPos = str:find(look)
+
+    while startPos do
+        local before = startPos == 1 or not str:sub(startPos - 1, startPos - 1):match("%a")
+        local after = endPos == #str or not str:sub(endPos + 1, endPos + 1):match("%a")
+
+        if before and after then
+            return true
+        end
+
+        startPos, endPos = str:find(look, endPos + 1)
+    end
+
+    return false
+end
+
 local function getLengthOfDict(dict)
 	local count = 0
 	for _, _ in pairs(dict) do
@@ -153,15 +170,30 @@ local function getTeams()
 	}
 end
 
-function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
+function MianFlagFramework:getAllReplaceableRenderers(gameObject)
+	local meshRenderers = {}
+	for _, renderer in ipairs(gameObject.GetComponentsInChildren(MeshRenderer)) do
+		if(renderer.gameObject.name:upper() ~= "SOLDIER" and self:canBeReplacedWithFlagTexture(renderer.material)) then
+			table.insert(meshRenderers, renderer)
+		end
+	end
+
+	for _, renderer in ipairs(gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
+		if(renderer.gameObject.name:upper() ~= "SOLDIER" and self:canBeReplacedWithFlagTexture(renderer.material)) then
+			table.insert(meshRenderers, renderer)
+		end
+	end
+
+	return meshRenderers
+end
+
+function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 	local nameLength = #material.name
 	if(nameLength >= 4) then
 		local name = ""
-		if(self.RAApplyTextureToNamedTexture or allChecks) then
-			name = material.name:upper()
+		name = material.name:upper()
 
-			if(name:match("FLAG")) then return true end
-		end
+		if((self.AggressiveFlagSearch and name:match("FLAG")) or containsString(name, "FLAG")) then return true end
 		
 		if(nameLength >= 8) then
 			name = material.name:upper()
@@ -171,7 +203,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material, allChecks)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.4.0"
+	self.version = "2.5.0"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -187,9 +219,11 @@ function MianFlagFramework:Awake()
 	self.AvoidDupeColors = config.GetBool("AvoidDupeColors")
 	self.FunnyMode = config.GetBool("FunnyMode")
 	self.AvoidDupeData = config.GetBool("AvoidDupeData")
-	self.RAApplyTextureToNamedTexture = config.GetBool("RAApplyTextureToNamedTexture")
-	self.ChanceInGroup = config.GetFloat("ChanceInGroup")
-	self.ChanceFromPoint = config.GetFloat("ChanceFromPoint")
+	self.ApplyTextureToVehicles = config.GetBool("ApplyTextureToVehicles")
+	self.ApplyTextureToWeapons = config.GetBool("ApplyTextureToWeapons")
+	self.AggressiveFlagSearch = config.GetBool("AggressiveFlagSearch")
+	self.ChanceInGroup = config.GetRange("ChanceInGroup") / 100
+	self.ChanceFromPoint = config.GetRange("ChanceFromPoint") / 100
 	self.ExecuteConfigForTeam = config.GetDropdown("ExecuteConfigForTeam")
 	self.AssignedMeshes = config.GetString("Meshes")
 	self.AssignedVoices = config.GetString("Voices")
@@ -478,7 +512,10 @@ function MianFlagFramework:Start()
 	GameEvents.onCapturePointNeutralized.AddListener(self,"autoSetPointMaterial")
 	GameEvents.onActorSpawn.AddListener(self, "onActorSpawn")
 	GameEvents.onMatchEnd.AddListener(self, "onMatchEnd")
-	GameEvents.onVehicleSpawn.AddListener(self, "onVehicleSpawned")
+
+	if(self.ApplyTextureToVehicles) then
+		GameEvents.onVehicleSpawn.AddListener(self, "onVehicleSpawned")
+	end
 end
 -- The two functions below are to handle compatiblity with old mutator packs
 function MianFlagFramework:addTextureData()
@@ -941,8 +978,10 @@ function MianFlagFramework:Update()
 				end
 			end
 		
-			for _, vehicle in ipairs(ActorManager.vehicles) do
-				self:onVehicleSpawned(vehicle)
+			if(self.ApplyTextureToVehicles) then
+				for _, vehicle in ipairs(ActorManager.vehicles) do
+					self:onVehicleSpawned(vehicle)
+				end
 			end
 		end
 	end
@@ -989,24 +1028,13 @@ function MianFlagFramework:ApplyTextureToTarget(target, texture)
     if not target then return false end
 
     local changed = false
-    local renderers = {}
-
-    for _, renderer in ipairs(target.GetComponentsInChildren(MeshRenderer)) do
-        table.insert(renderers, renderer)
-    end
-
-    for _, renderer in ipairs(target.GetComponentsInChildren(SkinnedMeshRenderer)) do
-        table.insert(renderers, renderer)
-    end
+    local renderers = self:getAllReplaceableRenderers(target)
 
     for _, renderer in ipairs(renderers) do
         for _, material in ipairs(renderer.materials) do
-            if(self:canBeReplacedWithFlagTexture(material)) then
-
-                material.SetTexture("_MainTex", texture)
-                material.color = Color(1, 1, 1, 1)
-                changed = true
-            end
+			material.SetTexture("_MainTex", texture)
+			material.color = Color(1, 1, 1, 1)
+			changed = true
         end
     end
 
@@ -1017,21 +1045,16 @@ function MianFlagFramework:onDriverChange()
 	local vehicle = CurrentEvent.listenerData
 	local driver = vehicle.driver
 
-	local meshRenderers = {}
-	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
-		table.insert(meshRenderers, renderer)
-	end
+	local meshRenderers = self:getAllReplaceableRenderers(vehicle.gameObject)
 	
 	for _, meshRenderer in ipairs(meshRenderers) do
 		for _, material in ipairs(meshRenderer.materials) do
-			if(self:canBeReplacedWithFlagTexture(material)) then
-				local texture = (driver and self.ActorsToTexture[driver]) or self.OldVehicleTextures[material]
-				material.SetTexture("_MainTex", texture)
-				if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
-					self.OldVehicleTextures[material] = texture
-				elseif(driver and texture == self.ActorsToTexture[driver]) then
-					material.color = Color(1, 1, 1, 1)
-				end
+			local texture = (driver and self.ActorsToTexture[driver]) or self.OldVehicleTextures[material]
+			material.SetTexture("_MainTex", texture)
+			if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
+				self.OldVehicleTextures[material] = texture
+			elseif(driver and texture == self.ActorsToTexture[driver]) then
+				material.color = Color(1, 1, 1, 1)
 			end
 		end
 	end
@@ -1045,17 +1068,12 @@ end
 function MianFlagFramework:onVehicleSpawned(vehicle)
 	self.script.AddValueMonitor("seatDriver", "onDriverChange", vehicle)
 
-	local meshRenderers = {}
-	for _, renderer in ipairs(vehicle.gameObject.GetComponentsInChildren(MeshRenderer)) do
-		table.insert(meshRenderers, renderer)
-	end
+	local meshRenderers = self:getAllReplaceableRenderers(vehicle.gameObject)
 
 	for _, meshRenderer in ipairs(meshRenderers) do
 		for _, material in ipairs(meshRenderer.materials) do
-			if(self:canBeReplacedWithFlagTexture(material)) then
-				material.SetTexture("_MainTex", nil)
-				material.color = Color(1, 1, 1, 1)
-			end
+			material.SetTexture("_MainTex", nil)
+			material.color = Color(1, 1, 1, 1)
 		end
 	end
 end
@@ -1083,7 +1101,7 @@ end
 function MianFlagFramework:onActorSpawn(actor)
 	self.GameStarted = true
 
-	if(not self.ActorsHaveListener[actor]) then
+	if(self.ApplyTextureToWeapons and not self.ActorsHaveListener[actor]) then
 		self.script.AddValueMonitor("monitorActiveWeapon", "onSwapWeapon", actor)
 		self.ActorsHaveListener[actor] = true
 	end
@@ -1191,7 +1209,7 @@ function MianFlagFramework:addMeshDataToActor(actor, texture, meshData)
 	local flagMaterial = self:createOrGetExistingMaterialFromTexture("Flat", texture, nil, 1)
 	local materials = {}
 	for _, material in ipairs(meshData.materials) do
-		if(self:canBeReplacedWithFlagTexture(material, true)) then
+		if(self:canBeReplacedWithFlagTexture(material)) then
 			table.insert(materials, flagMaterial)
 		else
 			table.insert(materials, material)

@@ -185,8 +185,8 @@ function FlagViewer:Start()
 	self.MeshTemplate.SetActive(false)
 
 	self.mutatorList = list.createNewList(self.MutatorList.transform, nil, true)
-	self.defaultList = list.createNewList(self.FlagList.transform, self.CategoryCounter.GetComponentInChildren(Text))
-	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter.GetComponentInChildren(Text))
+	self.defaultList = list.createNewList(self.FlagList.transform, self.CategoryCounter)
+	self.creatorList = list.createNewList(self.Creator.Content.transform, self.Creator.CategoryCounter)
 
 	self.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.defaultList, conditionFunction=self.conditionForMainList})
 	self.Creator.Search.onValueChanged.AddListener(self, "calculateSearch", {list=self.creatorList, conditionFunction=self.conditionForCreator})
@@ -216,7 +216,7 @@ function FlagViewer:Start()
 
 	for commandName, _ in pairs(self.commands) do
 		local command = GameObject.Instantiate(self.Creator.CommandTemplate, self.Creator.CommandContent.transform)
-		local name = command.GetComponentInChildren(Text)
+		local name = command.GetComponentInChildren(TextMeshProUGUI)
 		name.text = commandName
 		command.GetComponent(Button).onClick.AddListener(self, "triggerCommand", commandName)
 		command.SetActive(true)
@@ -317,14 +317,14 @@ end
 function FlagViewer:createMutatorInList(mutatorData, list, functionName, optionalTemplate)
 	local mutator = GameObject.Instantiate(optionalTemplate or self.MutatorTemplate, list:getTransform())
 	local image = mutator.GetComponentInChildren(RawImage)
-	local name = mutator.GetComponentInChildren(Text)
+	local name = mutator.GetComponentInChildren(TextMeshProUGUI)
 
 	local metadata = mutatorData.metadata
 	image.texture = metadata.cover
 	name.text = metadata.name
 
 	if(self[functionName]) then
-		image.onPointerClick.AddListener(self, functionName, mutatorData)		
+		image.onPointerClick.AddListener(self, functionName, mutatorData)
 	end
 
 	local object = {
@@ -338,7 +338,7 @@ end
 
 function FlagViewer:createMeshInList(mutatorName, data, list, functionName, optionalTemplate)
 	local mesh = GameObject.Instantiate(optionalTemplate or self.MeshTemplate, list:getTransform())
-	local name = mesh.GetComponentInChildren(Text)
+	local name = mesh.GetComponentInChildren(TextMeshProUGUI)
 	local button = mesh.GetComponentInChildren(Button)
 
 	name.text = data.name
@@ -361,13 +361,13 @@ end
 function FlagViewer:createFlagInList(mutatorName, data, list, functionName, optionalTemplate)
 	local flag = GameObject.Instantiate(optionalTemplate or self.FlagTemplate, list:getTransform())
 	local image = flag.GetComponentInChildren(RawImage)
-	local name = flag.GetComponentInChildren(Text)
+	local name = flag.GetComponentInChildren(TextMeshProUGUI)
 
 	image.texture = data.texture
 	name.text = data.name
-	local teamColor = data.teamColor
-	local color = (teamColor and Color(teamColor.r, teamColor.g, teamColor.b)) or Color(255, 255, 255)
-	name.color = color
+	-- local teamColor = data.teamColor
+	-- local color = (teamColor and Color(teamColor.r, teamColor.g, teamColor.b)) or Color(255, 255, 255)
+	-- name.color = color
 
 	if(self[functionName]) then
 		image.onPointerClick.AddListener(self, functionName, data)		
@@ -387,9 +387,9 @@ end
 function FlagViewer:clickedValidate()
 	local success = self.framework:validateConfiguration(self.Creator.Output.text)
 	if(success) then
-		self.Creator.ValidateText.text = "Configuration was successful!"
+		self.Creator.ValidateText.text = "Valid configuration!"
 	else
-		self.Creator.ValidateText.text = "Configuration unsuccessful! Check console for more info"
+		self.Creator.ValidateText.text = "Invalid configuration! Check console for more information"
 	end
 end
 
@@ -439,6 +439,7 @@ function FlagViewer:clickedMutator()
 	if(not self.selectedMutator or (self.selectedMutator and self.selectedMutator.metadata.name ~= mutatorData.metadata.name)) then
 		self.selectedMutator = mutatorData
 
+		self.creatorList:changeToCategory(1)
 		self:calculateSearch(self.Search.text, self.defaultList, self.conditionForMainList)
 		self:updateText()
 	end
@@ -473,26 +474,31 @@ end
 
 function FlagViewer:filterFlagCreator()
 	self.Creator.currentlyOn = "flags"
+	self.creatorList:changeToCategory(1)
 	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
 end
 
 function FlagViewer:filterMutatorCreator()
 	self.Creator.currentlyOn = "mutators"
+	self.creatorList:changeToCategory(1)
 	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
 end
 
 function FlagViewer:filterAccessoryCreator()
 	self.Creator.currentlyOn = "meshes"
+	self.creatorList:changeToCategory(1)
 	self:calculateSearch(self.Creator.Search.text, self.creatorList, self.conditionForCreator)
 end
 
 function FlagViewer:filterFlag()
 	self.onFlags = true
+	self.defaultList:changeToCategory(1)
 	self:calculateSearch(self.Search.text, self.defaultList, self.conditionForMainList)
 end
 
 function FlagViewer:filterMesh()
 	self.onFlags = false
+	self.defaultList:changeToCategory(1)
 	self:calculateSearch(self.Search.text, self.defaultList, self.conditionForMainList)
 end
 
@@ -526,7 +532,7 @@ function FlagViewer:calculateSearch(text, list, conditionFunction)
 	list:resetViewables()
 	for _, objectData in pairs(list:getObjects()) do
 		local object = objectData.object
-		local canBeActive = (not conditionFunction or conditionFunction(self, objectData)) and string.find(object.GetComponentInChildren(Text).text, text:upper()) ~= nil
+		local canBeActive = (not conditionFunction or conditionFunction(self, objectData)) and string.find(object.GetComponentInChildren(TextMeshProUGUI).text, text:upper()) ~= nil
 		if(canBeActive) then
 			list:makeObjectViewable(objectData)
 		end
