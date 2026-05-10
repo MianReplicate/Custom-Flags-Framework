@@ -102,7 +102,7 @@ MonoBehaviour:
       - id: 
         displayName: Aggressively search for the word "FLAG" in each material for
           replacement. This can cause unexpected issues! Use only when necessary!
-        orderPriority: 15
+        orderPriority: 17
       integers:
       - id: WaitForMutators
         displayName: Wait Time (seconds)
@@ -147,6 +147,10 @@ MonoBehaviour:
         displayName: <color=purple>Team Voices</color>
         orderPriority: 3
         value: 
+      - id: Blacklist
+        displayName: Blacklist Vehicles/Weapons (SPLIT BY COMMA)
+        orderPriority: 15
+        value: 
       bools:
       - id: ChangeTeamNamesToFlagName
         displayName: Change Team Names to Flag Names
@@ -186,11 +190,15 @@ MonoBehaviour:
         value: 1
       - id: AggressiveFlagSearch
         displayName: Aggressive Flag Search
-        orderPriority: 16
+        orderPriority: 18
         value: 0
       - id: SetActorColorToFlagColor
         displayName: Change Individual Actor Color From Flag (REQUIRES LOVE BITES)
         orderPriority: 5
+        value: 0
+      - id: IsWhitelist
+        displayName: Use Blacklist as Whitelist Instead
+        orderPriority: 16
         value: 0
       - id: DebugMode
         displayName: Debug Mode

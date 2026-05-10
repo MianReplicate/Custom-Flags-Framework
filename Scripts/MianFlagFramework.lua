@@ -170,21 +170,48 @@ local function getTeams()
 	}
 end
 
-function MianFlagFramework:getAllReplaceableRenderers(gameObject)
-	local meshRenderers = {}
-	for _, renderer in ipairs(gameObject.GetComponentsInChildren(MeshRenderer)) do
-		if(renderer.gameObject.name:upper() ~= "SOLDIER" and self:canBeReplacedWithFlagTexture(renderer.material)) then
-			table.insert(meshRenderers, renderer)
+function MianFlagFramework:passesBlacklist(nameToMatch)
+	local isInList = false
+	nameToMatch = nameToMatch:upper()
+	for name in string.gmatch(self.Blacklist, "([^,]+)") do
+		if(name:upper():gsub(" %(CLONE%)", "") == nameToMatch) then
+			isInList = true
+			break
 		end
+	end
+
+	if(isInList and self.IsWhitelist) then
+		return true
+	elseif(not isInList and not self.IsWhitelist) then
+		return true
+	end
+
+	return false
+end
+
+function MianFlagFramework:getAllReplaceableMaterials(gameObject)
+	local materials = {}
+	local function checkRenderer(renderer)
+		if(renderer.enabled) then
+			if(renderer.gameObject.name:upper() ~= "SOLDIER") then
+				for _, material in ipairs(renderer.materials) do
+					if(self:canBeReplacedWithFlagTexture(renderer.material)) then
+						table.insert(materials, material)
+					end
+				end
+			end
+		end
+	end
+
+	for _, renderer in ipairs(gameObject.GetComponentsInChildren(MeshRenderer)) do
+		checkRenderer(renderer)
 	end
 
 	for _, renderer in ipairs(gameObject.GetComponentsInChildren(SkinnedMeshRenderer)) do
-		if(renderer.gameObject.name:upper() ~= "SOLDIER" and self:canBeReplacedWithFlagTexture(renderer.material)) then
-			table.insert(meshRenderers, renderer)
-		end
+		checkRenderer(renderer)
 	end
 
-	return meshRenderers
+	return materials
 end
 
 function MianFlagFramework:canBeReplacedWithFlagTexture(material)
@@ -203,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.5.0"
+	self.version = "2.5.1"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -229,6 +256,8 @@ function MianFlagFramework:Awake()
 	self.AssignedVoices = config.GetString("Voices")
 	self.DebugMode = config.GetBool("DebugMode")
 	self.SetIndividualActorColor = config.GetBool("SetActorColorToFlagColor")
+	self.Blacklist = config.GetString("Blacklist")
+	self.IsWhitelist = config.GetBool("IsWhitelist")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
 	self.WaitTimer = self.DefaultWaitTimer
@@ -806,7 +835,7 @@ function MianFlagFramework:executeCommandFromSyntax(syntax)
 	end
 end
 
- function MianFlagFramework:executeStringList(string)
+function MianFlagFramework:executeStringList(string)
 	local hasFailedSomewhere = false
 	local list = {}
 	for _, name in ipairs(findResults(string)) do
@@ -1028,15 +1057,13 @@ function MianFlagFramework:ApplyTextureToTarget(target, texture)
     if not target then return false end
 
     local changed = false
-    local renderers = self:getAllReplaceableRenderers(target)
+    local materials = self:getAllReplaceableMaterials(target)
 
-    for _, renderer in ipairs(renderers) do
-        for _, material in ipairs(renderer.materials) do
-			material.SetTexture("_MainTex", texture)
-			material.color = Color(1, 1, 1, 1)
-			changed = true
-        end
-    end
+	for _, material in ipairs(materials) do
+		material.SetTexture("_MainTex", texture)
+		material.color = Color(1, 1, 1, 1)
+		changed = true
+	end
 
     return changed
 end
@@ -1045,17 +1072,14 @@ function MianFlagFramework:onDriverChange()
 	local vehicle = CurrentEvent.listenerData
 	local driver = vehicle.driver
 
-	local meshRenderers = self:getAllReplaceableRenderers(vehicle.gameObject)
-	
-	for _, meshRenderer in ipairs(meshRenderers) do
-		for _, material in ipairs(meshRenderer.materials) do
-			local texture = (driver and self.ActorsToTexture[driver]) or self.OldVehicleTextures[material]
-			material.SetTexture("_MainTex", texture)
-			if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
-				self.OldVehicleTextures[material] = texture
-			elseif(driver and texture == self.ActorsToTexture[driver]) then
-				material.color = Color(1, 1, 1, 1)
-			end
+	local materials = self:getAllReplaceableMaterials(vehicle.gameObject)
+	for _, material in ipairs(materials) do
+		local texture = (driver and self.ActorsToTexture[driver]) or self.OldVehicleTextures[material]
+		material.SetTexture("_MainTex", texture)
+		if(not self.OldVehicleTextures[material] and texture and (not driver or texture ~= self.ActorsToTexture[driver])) then
+			self.OldVehicleTextures[material] = texture
+		elseif(driver and texture == self.ActorsToTexture[driver]) then
+			material.color = Color(1, 1, 1, 1)
 		end
 	end
 end
@@ -1066,15 +1090,19 @@ function MianFlagFramework:seatDriver()
 end
 
 function MianFlagFramework:onVehicleSpawned(vehicle)
+	self:debug("Checking if "..vehicle.vehicleInfo.name.." passes the blacklist..")
+	if(not self:passesBlacklist(vehicle.vehicleInfo.name)) then
+		self:debug(vehicle.vehicleInfo.name.." does not pass the blacklist!")
+		return
+	end
+
 	self.script.AddValueMonitor("seatDriver", "onDriverChange", vehicle)
 
-	local meshRenderers = self:getAllReplaceableRenderers(vehicle.gameObject)
+	local materials = self:getAllReplaceableMaterials(vehicle.gameObject)
 
-	for _, meshRenderer in ipairs(meshRenderers) do
-		for _, material in ipairs(meshRenderer.materials) do
-			material.SetTexture("_MainTex", nil)
-			material.color = Color(1, 1, 1, 1)
-		end
+	for _, material in ipairs(materials) do
+		material.SetTexture("_MainTex", nil)
+		material.color = Color(1, 1, 1, 1)
 	end
 end
 
@@ -1087,6 +1115,12 @@ function MianFlagFramework:onSwapWeapon(weapon, actor)
 	local actor = actor or CurrentEvent.listenerData
 
 	if not weapon or (actor.activeSeat and actor.activeSeat.hasActiveWeapon) then return end
+
+	self:debug("Checking if "..weapon.gameObject.name.." passes the blacklist..")
+	if(not self:passesBlacklist(weapon.gameObject.name)) then
+		self:debug(weapon.gameObject.name.." does not pass the blacklist!")
+		return
+	end
 
     local texture = self.ActorsToTexture[actor]
     if not texture then return end
