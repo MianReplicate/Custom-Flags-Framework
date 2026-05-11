@@ -125,7 +125,7 @@ MonoBehaviour:
           value: 50
           min: 0
           max: 100
-          wholeNumbers: 0
+          wholeNumbers: 1
       strings:
       - id: BlueFlagTextures
         displayName: <color=blue>Eagle Flag(s)</color>
