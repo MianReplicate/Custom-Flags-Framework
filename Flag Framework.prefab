@@ -58,11 +58,6 @@ MonoBehaviour:
     configuration:
       labels:
       - id: 
-        displayName: <b><color=lightblue>The framework will wait this amount of time
-          for other packs to load per added pack. Increase this if packs are not
-          being added in time.</color></b>
-        orderPriority: 7
-      - id: 
         displayName: <color=lightblue>Type in your configurations in the inputs below!
           Preferably you should use the "Flag Viewer" map to create your output,
           however if you want, you can also type manually.</color>
@@ -89,9 +84,6 @@ MonoBehaviour:
         orderPriority: 30
       - id: 
         displayName: 
-        orderPriority: 6
-      - id: 
-        displayName: 
         orderPriority: 19
       - id: 
         displayName: 
@@ -103,11 +95,7 @@ MonoBehaviour:
         displayName: Aggressively search for the word "FLAG" in each material for
           replacement. This can cause unexpected issues! Use only when necessary!
         orderPriority: 17
-      integers:
-      - id: WaitForMutators
-        displayName: Wait Time (seconds)
-        orderPriority: 8
-        value: 3
+      integers: []
       floats: []
       ranges:
       - id: ChanceInGroup

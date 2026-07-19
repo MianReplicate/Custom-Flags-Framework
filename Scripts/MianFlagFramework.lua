@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.5.1"
+	self.version = "2.6.0"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -240,7 +240,6 @@ function MianFlagFramework:Awake()
 	self.ChangeTeamNamesToFlagName = config.GetBool("ChangeTeamNamesToFlagName")
 	self.ChangeTeamColorToFlagColor = config.GetBool("ChangeTeamColorToFlagColor")
 	self.ChangeScoreboardToTeamFlag = config.GetBool("ChangeScoreboardToTeamFlag")
-	self.DefaultWaitTimer = config.GetInt("WaitForMutators")
 	self.IgnoreFailedCapturePoint = config.GetBool("IgnoreFailedCapturePoint")
 	self.AlertedUser = config.GetBool("IgnoreFailedCapturePoint")
 	self.AvoidDupeColors = config.GetBool("AvoidDupeColors")
@@ -260,8 +259,7 @@ function MianFlagFramework:Awake()
 	self.IsWhitelist = config.GetBool("IsWhitelist")
 	self.IsCloth = self.targets.IsCloth
 	self.TemplateMaterial = self.targets.TemplateMaterial
-	self.WaitTimer = self.DefaultWaitTimer
-	self.FinishedAddingPacks = false
+	self.RegisteringPacks = false
 	self.OverlayLabel = GameObject.Find("Ingame UI Container(Clone)/New Ingame UI/Overlay Label Element/Overlay Label")
 	self.VictoryText = GameObject.Find("Ingame UI Container(Clone)/Victory UI Canvas/Victory Panel/Victory Focus/Victory Text")
 	self.OldVehicleTextures = {}
@@ -502,7 +500,7 @@ end
 function MianFlagFramework:Start()
 	for _, actor in ipairs(ActorManager.actors) do
 		if(self.TeamToName[actor.team] == nil) then
-			self.FinishedAddingPacks = true
+			self.RegisteringPacks = true
 			self:log("Detected Multi-Teams Battle but Love Bites is not installed!")
 			self.gameObject.GetComponent(TriggerScriptedSignal).Send("detectedMTWithoutLB")
 			return
@@ -545,6 +543,155 @@ function MianFlagFramework:Start()
 	if(self.ApplyTextureToVehicles) then
 		GameEvents.onVehicleSpawn.AddListener(self, "onVehicleSpawned")
 	end
+
+	self.RegisteringPacks = true
+	local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
+	for _, behaviour in ipairs(scriptedBehaviours) do
+		if(behaviour.self.CustomFlags ~= nil) then
+			self:addFlagPack(behaviour.self)
+		end
+		if(behaviour.self.CustomMeshes ~= nil) then
+			self:addMeshPack(behaviour.self)
+		end
+	end
+	self.RegisteringPacks = false
+	self.FinishedAddingPacks = true
+
+	self:log("Starting framework version "..self.version)
+
+	local TeamToName = cloneDict(self.TeamToName)
+	TeamToName[Team.Neutral] = nil
+	TeamToName = dictToArray(TeamToName)
+
+	local decision = self.ExecuteConfigForTeam
+
+	if(decision == 0 or decision == 1) then
+		for index, value in ipairs(TeamToName) do
+			if(value.key == (decision == 0 and "Blue") or value.key == (decision == 1 and "Red")) then
+				table.insert(TeamToName, table.remove(TeamToName, index), 1);
+				break
+			end
+		end
+	else
+		TeamToName = shuffleArray(TeamToName)
+	end
+
+	self.commandContext = {
+		type = "meshes",
+		allowDupes = true
+	}
+	self:executeStringList(self.AssignedMeshes)
+
+	self.commandContext = {
+		type = "voices",
+		allowDupes = true
+	}
+	self:executeStringList(self.AssignedVoices)
+
+	-- Indexes will still work with enums, so do not worry about team
+	local index = -1
+
+	for _, pair in pairs(TeamToName) do
+		local team = pair.key
+		local name = pair.value
+		index = index + 1
+
+		local vanillaTeamName = self.VanillaTeamList[team]
+		local configuration
+		if(vanillaTeamName) then 
+			configuration = self.script.mutator.configuration.GetString(vanillaTeamName.."FlagTextures")
+		else
+			configuration = self:findTexturesForExtraTeam(name, self.script.mutator.configuration.GetString("ExtraFlagTextures")) or ""
+		end
+
+		local texDatas = {}
+
+		self.commandContext = {
+			type = "flags",
+			useType = true
+		}
+
+		local results = self:executeStringList(configuration)
+		for _, _name in ipairs(results) do
+			_name = _name:upper()
+			local data = self:getData(self.commandContext.type, _name)
+			if(data) then
+				self:putDataForTeam(team, data)
+				table.insert(texDatas, data)
+			else
+				self:log(_name.." is an invalid flag! Did you name it incorrectly?")
+			end
+		end
+
+		local firstTexData = texDatas[1]
+		local lastTexData = texDatas[#texDatas]
+
+		if(firstTexData and lastTexData) then
+			local teamSpecific = (team == Team.Blue and "Team Panel") or (team == Team.Red and "Team Panel (1)") or ("MTB Scoreboard Column "..index)
+			if(self.ChangeTeamNamesToFlagName) then
+				local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
+		
+				GameManager.SetTeamName(team, name)
+				GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
+			end
+	
+			if(self.ChangeTeamColorToFlagColor) then
+				local color = firstTexData.teamColor or ColorScheme.GetTeamColor(team)
+
+				local keepLoopin = true
+				while(keepLoopin and self.AvoidDupeColors) do
+					local check = false
+
+					for _, _pair in pairs(TeamToName) do
+						local _team = _pair.key
+						if(_team ~= team) then
+							local otherTeamColor = ColorScheme.GetTeamColor(_team)
+							if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b) then
+								color.r = math.random(0, 255) / 255
+								color.g = math.random(0, 255) / 255
+								color.b = math.random(0, 255) / 255
+								check = true
+								break
+							end
+						end
+					end
+
+					keepLoopin = check
+				end
+
+				color = Color(color.r, color.g, color.b)
+				local funnyColor = Color(color.r * 255, color.g * 255, color.b * 255)
+				ColorScheme.SetTeamColor(team, (self.FunnyMode and funnyColor) or color)
+				color.a = 0.392
+				GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
+			end
+
+			if(self.ChangeScoreboardToTeamFlag) then
+				local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific).GetComponent(Image)
+				-- local a = teamPanelImage.color.a
+				teamPanelImage.material = self:createOrGetExistingMaterialFromTexture("UI", firstTexData.texture, nil, 1, teamPanelImage.material)
+				local color = Color(0.6, 0.6, 0.6, 0.5)
+				teamPanelImage.color = color
+			end
+
+			self.TextureForSpawn[team] = {texture=firstTexData.texture}
+		end
+
+		for _, capturePoint in pairs(self.Flags) do
+			if(capturePoint.owner == team) then
+				local texData = self:getAndIncrementRunnerUp(team)
+				if(texData) then
+					self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", texData.texture, texData.overrideMaterialColor))
+				end
+			end
+		end
+	end
+
+	if(self.ApplyTextureToVehicles) then
+		for _, vehicle in ipairs(ActorManager.vehicles) do
+			self:onVehicleSpawned(vehicle)
+		end
+	end
 end
 -- The two functions below are to handle compatiblity with old mutator packs
 function MianFlagFramework:addTextureData()
@@ -563,8 +710,9 @@ function MianFlagFramework:validatePack(mutatorData, validateTable)
 		error("A pack is trying to add data without metadata! Cannot proceed")
 	end
 
-	if(self.FinishedAddingPacks) then
-		error("A pack tried to add data outside of registration period. Try increasing the wait time in the framework settings.")
+	if(not self.RegisteringPacks) then
+		-- Many packs for CFF have already been made, so we have to just ignore them if they are trying to add data.
+		return false
 	end
 
 	for key, validate in pairs(validateTable) do
@@ -612,6 +760,17 @@ function MianFlagFramework:addMeshPack(mutatorData)
 		}
 		mutatorTable.meshes = {}
 
+		if(#mutatorData.CustomMeshes <= 0) then
+			self:log("Migrating old mesh pack to new format: "..name)
+
+			local customMeshes = mutatorData.dataContainer.GetGameObjectArray("Mesh")
+
+			for _, mesh in ipairs(customMeshes) do
+				local renderer = mesh.GetComponent(SkinnedMeshRenderer)
+				table.insert(mutatorData.CustomMeshes, {mesh=renderer.sharedMesh, materials=renderer.materials})
+			end
+		end
+
 		for _, meshData in pairs(mutatorData.CustomMeshes) do
 			local mesh = meshData.mesh
 			local materials = meshData.materials
@@ -650,7 +809,6 @@ function MianFlagFramework:addMeshPack(mutatorData)
 		self:log("Failed to load pack: "..name)
 		self:log("<color=red>Error: "..errormsg.."</color>")
 	end
-	self.WaitTimer = self.DefaultWaitTimer
 end
 
 function MianFlagFramework:addFlagPack(mutatorData)
@@ -711,7 +869,6 @@ function MianFlagFramework:addFlagPack(mutatorData)
 		self:log("Failed to load pack: "..name)
 		self:log("Error: "..errormsg)
 	end
-	self.WaitTimer = self.DefaultWaitTimer
 end
 
 function MianFlagFramework:createOrGetExistingMaterialFromTexture(list, texture, overrideColor, overrideScale, overrideMaterial)
@@ -871,150 +1028,6 @@ function MianFlagFramework:findTexturesForExtraTeam(teamName, string)
 end
 
 function MianFlagFramework:Update()
-	if(not self.FinishedAddingPacks) then
-		self.WaitTimer = self.WaitTimer - Time.deltaTime
-
-		if(self.WaitTimer <= 0) then
-			self.FinishedAddingPacks = true
-
-			self:log("All packs seem to have been added: Starting framework version "..self.version)
-
-			local TeamToName = cloneDict(self.TeamToName)
-			TeamToName[Team.Neutral] = nil
-			TeamToName = dictToArray(TeamToName)
-
-			local decision = self.ExecuteConfigForTeam
-
-			if(decision == 0 or decision == 1) then
-				for index, value in ipairs(TeamToName) do
-					if(value.key == (decision == 0 and "Blue") or value.key == (decision == 1 and "Red")) then
-						table.insert(TeamToName, table.remove(TeamToName, index), 1);
-						break
-					end
-				end
-			else
-				TeamToName = shuffleArray(TeamToName)
-			end
-
-			self.commandContext = {
-				type = "meshes",
-				allowDupes = true
-			}
-			self:executeStringList(self.AssignedMeshes)
-
-			self.commandContext = {
-				type = "voices",
-				allowDupes = true
-			}
-			self:executeStringList(self.AssignedVoices)
-
-			-- Indexes will still work with enums, so do not worry about team
-			local index = -1
-
-			for _, pair in pairs(TeamToName) do
-				local team = pair.key
-				local name = pair.value
-				index = index + 1
-
-				local vanillaTeamName = self.VanillaTeamList[team]
-				local configuration
-				if(vanillaTeamName) then 
-					configuration = self.script.mutator.configuration.GetString(vanillaTeamName.."FlagTextures")
-				else
-					configuration = self:findTexturesForExtraTeam(name, self.script.mutator.configuration.GetString("ExtraFlagTextures")) or ""
-				end
-
-				local texDatas = {}
-
-				self.commandContext = {
-					type = "flags",
-					useType = true
-				}
-
-				local results = self:executeStringList(configuration)
-				for _, _name in ipairs(results) do
-					_name = _name:upper()
-					local data = self:getData(self.commandContext.type, _name)
-					if(data) then
-						self:putDataForTeam(team, data)
-						table.insert(texDatas, data)
-					else
-						self:log(_name.." is an invalid flag! Did you name it incorrectly?")
-					end
-				end
-
-				local firstTexData = texDatas[1]
-				local lastTexData = texDatas[#texDatas]
-
-				if(firstTexData and lastTexData) then
-					local teamSpecific = (team == Team.Blue and "Team Panel") or (team == Team.Red and "Team Panel (1)") or ("MTB Scoreboard Column "..index)
-					if(self.ChangeTeamNamesToFlagName) then
-						local name = (firstTexData == lastTexData and firstTexData.teamName:upper()) or firstTexData.teamName:upper().." ALLIES"
-				
-						GameManager.SetTeamName(team, name)
-						GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel/Text Team").GetComponent(Text).text = name
-					end
-			
-					if(self.ChangeTeamColorToFlagColor) then
-						local color = firstTexData.teamColor or ColorScheme.GetTeamColor(team)
-
-						local keepLoopin = true
-						while(keepLoopin and self.AvoidDupeColors) do
-							local check = false
-
-							for _, _pair in pairs(TeamToName) do
-								local _team = _pair.key
-								if(_team ~= team) then
-									local otherTeamColor = ColorScheme.GetTeamColor(_team)
-									if(otherTeamColor.r == color.r and otherTeamColor.g == color.g and otherTeamColor.b == color.b) then
-										color.r = math.random(0, 255) / 255
-										color.g = math.random(0, 255) / 255
-										color.b = math.random(0, 255) / 255
-										check = true
-										break
-									end
-								end
-							end
-
-							keepLoopin = check
-						end
-
-						color = Color(color.r, color.g, color.b)
-						local funnyColor = Color(color.r * 255, color.g * 255, color.b * 255)
-						ColorScheme.SetTeamColor(team, (self.FunnyMode and funnyColor) or color)
-						color.a = 0.392
-						GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific.."/Header Panel").GetComponent(Image).color = color
-					end
-
-					if(self.ChangeScoreboardToTeamFlag) then
-						local teamPanelImage = GameObject.Find("Scoreboard Canvas/Panel/"..teamSpecific).GetComponent(Image)
-						-- local a = teamPanelImage.color.a
-						teamPanelImage.material = self:createOrGetExistingMaterialFromTexture("UI", firstTexData.texture, nil, 1, teamPanelImage.material)
-						local color = Color(0.6, 0.6, 0.6, 0.5)
-						teamPanelImage.color = color
-					end
-
-					self.TextureForSpawn[team] = {texture=firstTexData.texture}
-				end
-
-				for _, capturePoint in pairs(self.Flags) do
-					if(capturePoint.owner == team) then
-						local texData = self:getAndIncrementRunnerUp(team)
-						if(texData) then
-							self:setPointMaterial(capturePoint, self:createOrGetExistingMaterialFromTexture("Flags", texData.texture, texData.overrideMaterialColor))
-						end
-					end
-				end
-			end
-		
-			if(self.ApplyTextureToVehicles) then
-				for _, vehicle in ipairs(ActorManager.vehicles) do
-					self:onVehicleSpawned(vehicle)
-				end
-			end
-		end
-	end
-
 	for team, teamTexture in pairs(self.TextureForSpawn) do
 		if(teamTexture.added) then
 			teamTexture.added = teamTexture.added - Time.deltaTime
@@ -1283,7 +1296,7 @@ function MianFlagFramework:autoSetPointMaterial(capturePoint, newOwner)
 	end
 
 	if(not texture) then
-		if(self.FinishedAddingPacks and ownerToUse ~= Team.Neutral) then
+		if(self.RegisteringPacks and ownerToUse ~= Team.Neutral) then
 			self:debug("No textures to use for "..ColorScheme.FormatTeamColor(self.TeamToName[ownerToUse], ownerToUse, ColorVariant.Bright)..": Using DEFAULT")
 		end
 		if(capturePoint.flagRenderer ~= nil) then
@@ -1422,7 +1435,7 @@ function MianFlagFramework:getNameFlair(data)
 end
 
 function MianFlagFramework:debug(...)
-	if(self.DebugMode) then
+	if(self.DebugMode or Debug.isTestMode) then
 		self:log(...)
 	end
 end
