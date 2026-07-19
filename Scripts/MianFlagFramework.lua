@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "3.0.0"
+	self.version = "3.0.1"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -829,13 +829,14 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			end,
 			name = function(value)
 				if(value == nil) then
-					error("A pack is trying to add itself without a name! Cannot proceed")
+					value = mutatorData.gameObject.name
 				end
 
 				if(value:match("{") or value:match("}") or value:match(":")) then
 					error(value.." is an invalid name! Cannot have {, }, or : in the name!")
 				else
 					mutatorData.name = value:upper()
+					name = mutatorData.name
 				end
 			end
 		})
@@ -880,8 +881,8 @@ function MianFlagFramework:addFlagPack(mutatorData)
 	if(success) then
 		self:debug("Added new pack: "..name)
 	else
-		self:log("Failed to load pack: "..name)
-		self:log("Error: "..errormsg)
+		self:warn("Failed to load pack: "..name)
+		self:warn("Error: "..errormsg)
 	end
 end
 
