@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "2.6.0"
+	self.version = "3.0.0"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -702,7 +702,7 @@ function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	mutator.name = mutatorName
 	mutator.CustomFlagToTeamColors = mutator.CustomFlagTeamColors
 	mutator.CustomFlagTeamColors = nil
-	self:addFlagPack(mutator)
+	self:warn("A flag pack,"..mutatorName..", is using an outdated format! Please let the author know to get this fixed ASAP as this format does not work consistently anymore for the flag framework.")
 end
 
 function MianFlagFramework:validatePack(mutatorData, validateTable)
@@ -716,12 +716,13 @@ function MianFlagFramework:validatePack(mutatorData, validateTable)
 	end
 
 	for key, validate in pairs(validateTable) do
-		if(not mutatorData[key]) then
-			local name = mutatorData.name or "A pack"
-			error(name.." is missing some required metadata, please get the newest lua file from one of my template packs if you are the developer. The missing metadata is: "..key)
-		elseif(validate) then
-			validate(mutatorData[key])
+		validate = validate or function(value)
+			if(value == nil) then
+				local name = mutatorData.name or "A pack"
+				error(name.." is missing some required metadata, please get the newest lua file from one of my template packs if you are the developer. The missing metadata is: "..key)
+			end
 		end
+		validate(mutatorData[key])
 	end
 
 	local name = mutatorData.name
@@ -744,6 +745,10 @@ function MianFlagFramework:addMeshPack(mutatorData)
 		cover = nil,
 		CustomMeshes = nil,
 		name = function(value)
+			if(value == nil) then
+				error("A pack is trying to add itself without a name! Cannot proceed")
+			end
+
 			if(value:match("{") or value:match("}") or value:match(":")) then
 				error(value.." is an invalid name! Cannot have {, }, or : in the name!")
 			else
@@ -812,22 +817,30 @@ function MianFlagFramework:addMeshPack(mutatorData)
 end
 
 function MianFlagFramework:addFlagPack(mutatorData)
-	local canRun = self:validatePack(mutatorData, {
-		cover = function() end,
-		CustomFlags = function() end,
-		CustomFlagToTeamColors = function() end,
-		name = function(value)
-			if(value:match("{") or value:match("}") or value:match(":")) then
-				error(value.." is an invalid name! Cannot have {, }, or : in the name!")
-			else
-				mutatorData.name = value:upper()
-			end
-		end
-	})
-	if(not canRun) then return end
-	local name = mutatorData.name
-
+	local name = mutatorData["name"] or "Unknown"
 	local success, errormsg = pcall(function()
+		local canRun = self:validatePack(mutatorData, {
+			cover = function() end,
+			CustomFlags = function() end,
+			CustomFlagToTeamColors = function(value)
+				if(value == nil and mutatorData.CustomFlagTeamColors == nil) then
+					error("CustomFlagToTeamColors is missing for "..name)
+				end
+			end,
+			name = function(value)
+				if(value == nil) then
+					error("A pack is trying to add itself without a name! Cannot proceed")
+				end
+
+				if(value:match("{") or value:match("}") or value:match(":")) then
+					error(value.." is an invalid name! Cannot have {, }, or : in the name!")
+				else
+					mutatorData.name = value:upper()
+				end
+			end
+		})
+		if(not canRun) then return end
+		
 		local mutatorTable = self.MutatorPacks[name] or {
 			metadata = mutatorData
 		}
@@ -849,10 +862,11 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			end
 			self:debug("Adding flag texture: "..nameToUse)
 			texture.name = nameToUse
+			local CustomFlagToTeamColors = mutatorData.CustomFlagToTeamColors or mutatorData.CustomFlagTeamColors
 			local flagGroup = {
 				texture=texture,
 				name = nameToUse,
-				teamColor=mutatorData.CustomFlagToTeamColors[index] or Color(math.random(1, 255)/255, math.random(1, 255)/255, math.random(1, 255)/255, 1),
+				teamColor=CustomFlagToTeamColors[index] or Color(math.random(1, 255)/255, math.random(1, 255)/255, math.random(1, 255)/255, 1),
 				teamName=nameToUse,
 				overrideMaterialColor=nil
 			}
@@ -1445,5 +1459,14 @@ function MianFlagFramework:log(...)
 	for _, extraArg in ipairs({...}) do
 		string = string..tostring(extraArg)
 	end
+	print(string)
+end
+
+function MianFlagFramework:warn(...)
+	local string = "<color=#fc0fc0>[Custom Flag Framework]:</color> <color=#FFFF00>"
+	for _, extraArg in ipairs({...}) do
+		string = string..tostring(extraArg)
+	end
+	string = string.."</color>"
 	print(string)
 end
