@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "3.0.1"
+	self.version = "3.0.2"
 	self.gameVersion = "35"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors =  ActorManager.actors
@@ -498,6 +498,22 @@ function MianFlagFramework:Awake()
 end
 
 function MianFlagFramework:Start()
+    self:log("Registering all flag and mesh packs...")
+    self.RegisteringPacks = true
+    local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
+    for _, behaviour in ipairs(scriptedBehaviours) do
+        if(behaviour.self.CustomFlags ~= nil) then
+            self:addFlagPack(behaviour.self)
+        end
+        if(behaviour.self.CustomMeshes ~= nil) then
+            self:addMeshPack(behaviour.self)
+        end
+    end
+    self.RegisteringPacks = false
+    self.FinishedAddingPacks = true
+
+	self:log("Starting framework version "..self.version)
+
 	for _, actor in ipairs(ActorManager.actors) do
 		if(self.TeamToName[actor.team] == nil) then
 			self.RegisteringPacks = true
@@ -543,21 +559,6 @@ function MianFlagFramework:Start()
 	if(self.ApplyTextureToVehicles) then
 		GameEvents.onVehicleSpawn.AddListener(self, "onVehicleSpawned")
 	end
-
-	self.RegisteringPacks = true
-	local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
-	for _, behaviour in ipairs(scriptedBehaviours) do
-		if(behaviour.self.CustomFlags ~= nil) then
-			self:addFlagPack(behaviour.self)
-		end
-		if(behaviour.self.CustomMeshes ~= nil) then
-			self:addMeshPack(behaviour.self)
-		end
-	end
-	self.RegisteringPacks = false
-	self.FinishedAddingPacks = true
-
-	self:log("Starting framework version "..self.version)
 
 	local TeamToName = cloneDict(self.TeamToName)
 	TeamToName[Team.Neutral] = nil
@@ -699,10 +700,8 @@ function MianFlagFramework:addTextureData()
 end
 
 function MianFlagFramework:addTexturePack(mutatorName, mutator)
-	mutator.name = mutatorName
 	mutator.CustomFlagToTeamColors = mutator.CustomFlagTeamColors
 	mutator.CustomFlagTeamColors = nil
-	self:warn("A flag pack,"..mutatorName..", is using an outdated format! Please let the author know to get this fixed ASAP as this format does not work consistently anymore for the flag framework.")
 end
 
 function MianFlagFramework:validatePack(mutatorData, validateTable)
@@ -715,17 +714,7 @@ function MianFlagFramework:validatePack(mutatorData, validateTable)
 		return false
 	end
 
-	for key, validate in pairs(validateTable) do
-		validate = validate or function(value)
-			if(value == nil) then
-				local name = mutatorData.name or "A pack"
-				error(name.." is missing some required metadata, please get the newest lua file from one of my template packs if you are the developer. The missing metadata is: "..key)
-			end
-		end
-		validate(mutatorData[key])
-	end
-
-	local name = mutatorData.name
+	local name = mutatorData.gameObject.name:upper():gsub("%(CLONE%)", ""):gsub("%s", "")
 	if(self.MutatorPacks[name]) then
 		self:log("<color=RED>A pack with the name, "..name..", is already known. The developer should really change the name of this pack but for now, we can use fallback code to register the pack under a different name. Please tell the developer to change their pack's name</color>")
 		local dupe = 0
@@ -734,32 +723,36 @@ function MianFlagFramework:validatePack(mutatorData, validateTable)
 			dupe = dupe + 1
 			tryName = name.."_"..dupe
 		until not self.MutatorPacks[tryName]
-		mutatorData.name = tryName
+		name = tryName
 	end
 
-	return true
+	for key, validate in pairs(validateTable) do
+		validate = validate or function(value)
+			if(value == nil) then
+				error(name.." is missing some required metadata, please get the newest lua file from one of my template packs if you are the developer. The missing metadata is: "..key)
+			end
+		end
+		validate(mutatorData[key])
+	end
+
+	return true, name
 end
 
 function MianFlagFramework:addMeshPack(mutatorData)
-	local canRun = self:validatePack(mutatorData, {
-		cover = nil,
-		CustomMeshes = nil,
-		name = function(value)
-			if(value == nil) then
-				error("A pack is trying to add itself without a name! Cannot proceed")
-			end
-
-			if(value:match("{") or value:match("}") or value:match(":")) then
-				error(value.." is an invalid name! Cannot have {, }, or : in the name!")
-			else
-				mutatorData.name = value:upper()
-			end
-		end
-	})
-	if(not canRun) then return end
-	local name = mutatorData.name
-
+	local name = mutatorData.gameObject.name:upper()
+	local softFailed = false
 	local success, errormsg = pcall(function()
+		local canRun, _name = self:validatePack(mutatorData, {
+			cover = nil,
+			CustomMeshes = nil,
+		})
+		if(not canRun) then
+			softFailed = true
+			return
+		end
+		name = _name or name
+		mutatorData.name = name
+
 		local mutatorTable = self.MutatorPacks[name] or {
 			metadata = mutatorData
 		}
@@ -809,7 +802,9 @@ function MianFlagFramework:addMeshPack(mutatorData)
 	end)
 
 	if(success) then
-		self:debug("Added new pack: "..name)
+		if(not softFailed) then
+			self:debug("Added new pack: "..name)			
+		end 
 	else
 		self:log("Failed to load pack: "..name)
 		self:log("<color=red>Error: "..errormsg.."</color>")
@@ -817,30 +812,20 @@ function MianFlagFramework:addMeshPack(mutatorData)
 end
 
 function MianFlagFramework:addFlagPack(mutatorData)
-	local name = mutatorData["name"] or "Unknown"
+	local name = "Unknown"
 	local success, errormsg = pcall(function()
-		local canRun = self:validatePack(mutatorData, {
+		local canRun, _name = self:validatePack(mutatorData, {
 			cover = function() end,
 			CustomFlags = function() end,
 			CustomFlagToTeamColors = function(value)
 				if(value == nil and mutatorData.CustomFlagTeamColors == nil) then
 					error("CustomFlagToTeamColors is missing for "..name)
 				end
-			end,
-			name = function(value)
-				if(value == nil) then
-					value = mutatorData.gameObject.name
-				end
-
-				if(value:match("{") or value:match("}") or value:match(":")) then
-					error(value.." is an invalid name! Cannot have {, }, or : in the name!")
-				else
-					mutatorData.name = value:upper()
-					name = mutatorData.name
-				end
 			end
 		})
 		if(not canRun) then return end
+		name = _name or name
+		mutatorData.name = name
 		
 		local mutatorTable = self.MutatorPacks[name] or {
 			metadata = mutatorData
