@@ -230,10 +230,9 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "3.0.2"
-	self.gameVersion = "35"
+	self.version = "3.0.3"
 	self.gameObject.name = "Custom Flag Framework"
-	self.Actors =  ActorManager.actors
+	self.Actors = ActorManager.actors
 	self.Flags = ActorManager.capturePoints
 
 	local config = self.script.mutator.configuration
@@ -498,25 +497,25 @@ function MianFlagFramework:Awake()
 end
 
 function MianFlagFramework:Start()
-    self:log("Registering all flag and mesh packs...")
+	self:log("Starting framework version "..self.version)
     self.RegisteringPacks = true
     local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
     for _, behaviour in ipairs(scriptedBehaviours) do
-        if(behaviour.self.CustomFlags ~= nil) then
-            self:addFlagPack(behaviour.self)
-        end
-        if(behaviour.self.CustomMeshes ~= nil) then
-            self:addMeshPack(behaviour.self)
-        end
+		if(behaviour.self ~= nil) then
+			if(behaviour.self.CustomFlags ~= nil) then
+				self:addFlagPack(behaviour.self)
+			end
+			if(behaviour.self.CustomMeshes ~= nil) then
+				self:addMeshPack(behaviour.self)
+			end
+		end
     end
     self.RegisteringPacks = false
     self.FinishedAddingPacks = true
-
-	self:log("Starting framework version "..self.version)
+	self:log("Finished registering all packs! Starting the configuration...")
 
 	for _, actor in ipairs(ActorManager.actors) do
 		if(self.TeamToName[actor.team] == nil) then
-			self.RegisteringPacks = true
 			self:log("Detected Multi-Teams Battle but Love Bites is not installed!")
 			self.gameObject.GetComponent(TriggerScriptedSignal).Send("detectedMTWithoutLB")
 			return
@@ -538,7 +537,7 @@ function MianFlagFramework:Start()
 		if(obj ~= nil) then
 			local component = obj.GetComponent(ScriptedBehaviour)
 			if(component.self.AddActorOverride ~= nil) then
-				table.insert(self.TeamVoiceMutators, component)	
+				table.insert(self.TeamVoiceMutators, component)
 			end
 		end
 	end
