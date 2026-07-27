@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "3.0.3"
+	self.version = "3.0.4"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors = ActorManager.actors
 	self.Flags = ActorManager.capturePoints
@@ -501,13 +501,20 @@ function MianFlagFramework:Start()
     self.RegisteringPacks = true
     local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
     for _, behaviour in ipairs(scriptedBehaviours) do
-		if(behaviour.self ~= nil) then
-			if(behaviour.self.CustomFlags ~= nil) then
-				self:addFlagPack(behaviour.self)
+		local success, errormsg = pcall(function()
+			if(behaviour and behaviour.self) then
+				if(behaviour.self.CustomFlags) then
+					self:addFlagPack(behaviour.self)
+				end
+				if(behaviour.self.CustomMeshes) then
+					self:addMeshPack(behaviour.self)
+				end
 			end
-			if(behaviour.self.CustomMeshes ~= nil) then
-				self:addMeshPack(behaviour.self)
-			end
+		end)
+
+		if(not success) then
+			self:warn("Failed to probe a scripted behaviour to see if it had flag/mesh packs")
+			self:error(errormsg)
 		end
     end
     self.RegisteringPacks = false
@@ -703,17 +710,14 @@ function MianFlagFramework:addTexturePack(mutatorName, mutator)
 	mutator.CustomFlagTeamColors = nil
 end
 
-function MianFlagFramework:validatePack(mutatorData, validateTable)
-	if(not mutatorData) then
-		error("A pack is trying to add data without metadata! Cannot proceed")
-	end
+function MianFlagFramework:validatePack(name, mutatorData, validateTable)
+	mutatorData.name = name
 
 	if(not self.RegisteringPacks) then
 		-- Many packs for CFF have already been made, so we have to just ignore them if they are trying to add data.
 		return false
 	end
 
-	local name = mutatorData.gameObject.name:upper():gsub("%(CLONE%)", ""):gsub("%s", "")
 	if(self.MutatorPacks[name]) then
 		self:log("<color=RED>A pack with the name, "..name..", is already known. The developer should really change the name of this pack but for now, we can use fallback code to register the pack under a different name. Please tell the developer to change their pack's name</color>")
 		local dupe = 0
@@ -734,14 +738,14 @@ function MianFlagFramework:validatePack(mutatorData, validateTable)
 		validate(mutatorData[key])
 	end
 
-	return true, name
+	return true
 end
 
 function MianFlagFramework:addMeshPack(mutatorData)
-	local name = mutatorData.gameObject.name:upper()
+	local name = mutatorData.gameObject.name:upper():gsub("%(CLONE%)", ""):gsub("%s", "")
 	local softFailed = false
 	local success, errormsg = pcall(function()
-		local canRun, _name = self:validatePack(mutatorData, {
+		local canRun = self:validatePack(name, mutatorData, {
 			cover = nil,
 			CustomMeshes = nil,
 		})
@@ -749,8 +753,6 @@ function MianFlagFramework:addMeshPack(mutatorData)
 			softFailed = true
 			return
 		end
-		name = _name or name
-		mutatorData.name = name
 
 		local mutatorTable = self.MutatorPacks[name] or {
 			metadata = mutatorData
@@ -802,18 +804,19 @@ function MianFlagFramework:addMeshPack(mutatorData)
 
 	if(success) then
 		if(not softFailed) then
-			self:debug("Added new pack: "..name)			
-		end 
+			self:debug("Added mesh pack: "..name)
+		end
 	else
-		self:log("Failed to load pack: "..name)
-		self:log("<color=red>Error: "..errormsg.."</color>")
+		self:warn("Failed to load pack: "..name)
+		self:error(errormsg)
 	end
 end
 
 function MianFlagFramework:addFlagPack(mutatorData)
-	local name = "Unknown"
+	local name = mutatorData.gameObject.name:upper():gsub("%(CLONE%)", ""):gsub("%s", "")
+	local softFailed = false
 	local success, errormsg = pcall(function()
-		local canRun, _name = self:validatePack(mutatorData, {
+		local canRun = self:validatePack(name, mutatorData, {
 			cover = function() end,
 			CustomFlags = function() end,
 			CustomFlagToTeamColors = function(value)
@@ -822,10 +825,11 @@ function MianFlagFramework:addFlagPack(mutatorData)
 				end
 			end
 		})
-		if(not canRun) then return end
-		name = _name or name
-		mutatorData.name = name
-		
+		if(not canRun) then
+			softFailed = true
+			return
+		end
+
 		local mutatorTable = self.MutatorPacks[name] or {
 			metadata = mutatorData
 		}
@@ -858,15 +862,17 @@ function MianFlagFramework:addFlagPack(mutatorData)
 			mutatorTable.flags[nameToUse] = flagGroup
 			self:cacheData("flags", nameToUse, flagGroup)
 		end
-		
+
 		self.MutatorPacks[name] = mutatorTable
 	end)
 
 	if(success) then
-		self:debug("Added new pack: "..name)
+		if(not softFailed) then
+			self:debug("Added flag pack: "..name)
+		end
 	else
 		self:warn("Failed to load pack: "..name)
-		self:warn("Error: "..errormsg)
+		self:error(errormsg)
 	end
 end
 
@@ -1448,10 +1454,9 @@ function MianFlagFramework:log(...)
 end
 
 function MianFlagFramework:warn(...)
-	local string = "<color=#fc0fc0>[Custom Flag Framework]:</color> <color=#FFFF00>"
-	for _, extraArg in ipairs({...}) do
-		string = string..tostring(extraArg)
-	end
-	string = string.."</color>"
-	print(string)
+	self:log("<color=#FFFF00>"..(...).."</color>")
+end
+
+function MianFlagFramework:error(...)
+	self:log("<color=red>Error: "..(...).."</color>")
 end
