@@ -230,7 +230,7 @@ function MianFlagFramework:canBeReplacedWithFlagTexture(material)
 end
 
 function MianFlagFramework:Awake()
-	self.version = "3.0.4"
+	self.version = "3.0.5"
 	self.gameObject.name = "Custom Flag Framework"
 	self.Actors = ActorManager.actors
 	self.Flags = ActorManager.capturePoints
@@ -501,20 +501,13 @@ function MianFlagFramework:Start()
     self.RegisteringPacks = true
     local scriptedBehaviours = GameObject.FindObjectsOfType(ScriptedBehaviour)
     for _, behaviour in ipairs(scriptedBehaviours) do
-		local success, errormsg = pcall(function()
-			if(behaviour and behaviour.self) then
-				if(behaviour.self.CustomFlags) then
-					self:addFlagPack(behaviour.self)
-				end
-				if(behaviour.self.CustomMeshes) then
-					self:addMeshPack(behaviour.self)
-				end
+		if(behaviour and behaviour.self) then
+			if(behaviour.self.CustomFlags) then
+				self:addFlagPack(behaviour.self)
 			end
-		end)
-
-		if(not success) then
-			self:warn("Failed to probe a scripted behaviour to see if it had flag/mesh packs")
-			self:error(errormsg)
+			if(behaviour.self.CustomMeshes) then
+				self:addMeshPack(behaviour.self)
+			end
 		end
     end
     self.RegisteringPacks = false
